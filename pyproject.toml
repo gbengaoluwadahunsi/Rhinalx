@@ -1,0 +1,14 @@
+[project]
+name = "rhinalx"
+version = "0.1.0"
+description = "Rhinalx — local-first research rationale memory for bench scientists"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "python-dotenv>=1.0",
+]
+
+# This is an application, not a distributable library — no build backend needed.
+[tool.uv]
+package = false

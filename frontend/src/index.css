@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+/* Rhinalx design tokens (from design/). Exposed as Tailwind theme values so
+   utilities like bg-paper / text-primary / font-serif work everywhere.
+   See design/rhinalx_ui_design_prompt.md §3. */
+@theme {
+  --color-ink: #1A1A17;
+  --color-ink-soft: #4A4740;
+  --color-ink-faint: #8A867C;
+  --color-paper: #FAF8F3;
+  --color-surface: #FFFFFF;
+  --color-sunk: #F3F0E8;
+  --color-line: #E7E3D9;
+  --color-primary: #10726B;
+  --color-primary-soft: #E0EFED;
+  --color-attention: #B8791E;
+  --color-attention-soft: #FBF1DD;
+  --color-link: #4C5FD5;
+  --color-citation: #F3ECC9;
+  --color-archive: #9A7B3C;
+  --color-danger: #B23A2E;
+  --color-ok: #3E9B6E;
+
+  --font-serif: "Spectral", Georgia, serif;
+  --font-sans: "IBM Plex Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+}

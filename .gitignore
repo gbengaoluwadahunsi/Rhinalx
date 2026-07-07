@@ -1,0 +1,21 @@
+# Secrets
+.env
+
+# Local single-file memory store (rebuilt by scripts/seed.py)
+data/rhinalx.db
+data/*.db-wal
+data/*.db-shm
+
+# Python / uv
+.venv/
+__pycache__/
+*.pyc
+
+# Node / Vite
+node_modules/
+frontend/dist/
+frontend/node_modules/
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; }
+  a { color: #4C5FD5; text-decoration: none; }
+  a:hover { color: #10726B; }
+  ::selection { background: #F3ECC9; }
+  .pp-scroll::-webkit-scrollbar { width: 10px; height: 10px; }
+  .pp-scroll::-webkit-scrollbar-thumb { background: #E7E3D9; border-radius: 8px; border: 3px solid transparent; background-clip: padding-box; }
+  @keyframes pp-slide-in { from { transform: translateX(24px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  @keyframes pp-pulse { 0%,100% { background: #F3ECC9; } 50% { background: #EBDF9C; } }
+  @keyframes pp-rise { from { transform: translateY(8px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+</style>
+</helmet>
+<div style="--ink:#1A1A17;--ink-soft:#4A4740;--ink-faint:#8A867C;--paper:#FAF8F3;--surface:#FFFFFF;--sunk:#F3F0E8;--line:#E7E3D9;--primary:#10726B;--primary-soft:#E0EFED;--attention:#B8791E;--attention-soft:#FBF1DD;--link:#4C5FD5;--citation:#F3ECC9;--archive:#9A7B3C;--danger:#B23A2E;--ok:#3E9B6E;--serif:'Spectral',Georgia,serif;--sans:'IBM Plex Sans',system-ui,sans-serif;--mono:'IBM Plex Mono',ui-monospace,monospace;height:100vh;overflow:hidden;font-family:var(--sans);color:var(--ink);background:var(--paper);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;">
+
+  <!-- ============ LANDING ============ -->
+  <sc-if value="{{ isLanding }}" hint-placeholder-val="{{ true }}">
+  <div class="pp-scroll" style="height:100vh;overflow-y:auto;background:var(--paper);">
+    <header style="max-width:1140px;margin:0 auto;padding:22px 32px;display:flex;align-items:center;justify-content:space-between;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:26px;height:26px;border-radius:5px;background:var(--primary);position:relative;">
+          <div style="position:absolute;inset:6px 6px auto 6px;height:2px;background:#fff;opacity:.9;"></div>
+          <div style="position:absolute;inset:11px 6px auto 6px;height:2px;background:#fff;opacity:.55;"></div>
+          <div style="position:absolute;inset:16px 6px auto 6px;height:2px;background:#fff;opacity:.3;"></div>
+        </div>
+        <span style="font:600 17px/1 var(--sans);letter-spacing:-.01em;">Rhinalx</span>
+      </div>
+      <nav style="display:flex;align-items:center;gap:26px;font:500 14px/1 var(--sans);color:var(--ink-soft);">
+        <span>How it works</span><span>The science</span><span>Security</span>
+        <button onClick="{{ go.home }}" style="background:var(--ink);color:var(--paper);padding:9px 15px;border-radius:6px;font:500 14px/1 var(--sans);">Open the app</button>
+      </nav>
+    </header>
+
+    <section style="max-width:1140px;margin:0 auto;padding:56px 32px 40px;">
+      <div style="display:inline-flex;align-items:center;gap:8px;padding:5px 11px;border:1px solid var(--line);border-radius:999px;background:var(--surface);font:500 12.5px/1 var(--sans);color:var(--ink-soft);margin-bottom:26px;">
+        <span style="width:7px;height:7px;border-radius:50%;background:var(--ok);"></span>Local-first · runs entirely on your machine
+      </div>
+      <h1 style="font:500 56px/1.08 var(--serif);letter-spacing:-.015em;margin:0 0 20px;max-width:820px;">Your lab remembers <em style="font-style:italic;color:var(--ink-soft);">what</em>. Rhinalx remembers <em style="font-style:italic;color:var(--primary);">why</em>.</h1>
+      <p style="font:400 19px/1.6 var(--sans);color:var(--ink-soft);max-width:620px;margin:0 0 30px;">A notebook records the dose, the antibody, the cohort. The reasoning behind them evaporates. Rhinalx reconstructs it — every claim traced to its source — and asks you for the rationale it notices is missing.</p>
+      <div style="display:flex;gap:12px;align-items:center;">
+        <button onClick="{{ go.home }}" style="background:var(--primary);color:#fff;padding:12px 20px;border-radius:6px;font:600 15px/1 var(--sans);">Download for macOS</button>
+        <button onClick="{{ go.home }}" style="padding:12px 18px;border-radius:6px;border:1px solid var(--line);background:var(--surface);font:500 15px/1 var(--sans);color:var(--ink);">See a live study →</button>
+      </div>
+    </section>
+
+    <!-- product screenshot: the real moment -->
+    <section style="max-width:1140px;margin:0 auto;padding:8px 32px 20px;">
+      <div style="border:1px solid var(--line);border-radius:10px;background:var(--surface);box-shadow:0 24px 60px -30px rgba(26,26,23,.28);overflow:hidden;">
+        <div style="height:38px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px;padding:0 14px;background:var(--sunk);">
+          <span style="width:10px;height:10px;border-radius:50%;background:#E7E3D9;"></span><span style="width:10px;height:10px;border-radius:50%;background:#E7E3D9;"></span><span style="width:10px;height:10px;border-radius:50%;background:#E7E3D9;"></span>
+          <span style="margin-left:12px;font:500 12.5px/1 var(--mono);color:var(--ink-faint);">Microglia Cohort-B · Ask</span>
+        </div>
+        <div style="padding:30px 34px;">
+          <p style="font:500 13px/1 var(--sans);color:var(--ink-faint);margin:0 0 8px;">You asked</p>
+          <p style="font:500 22px/1.35 var(--serif);margin:0 0 22px;">Why did we lower the LPS dose to 0.5&nbsp;mg/kg?</p>
+          <div style="display:inline-flex;align-items:center;gap:7px;padding:4px 10px;border-radius:999px;background:var(--primary-soft);color:var(--primary);font:600 12.5px/1 var(--sans);margin-bottom:14px;">
+            <span style="width:6px;height:6px;border-radius:50%;background:var(--primary);"></span>Answered by Claude · 3 sources
+          </div>
+          <p style="font:400 17px/1.6 var(--serif);color:var(--ink);max-width:760px;margin:0;">The dose was halved on 2&nbsp;March because pilot animals at 1.0&nbsp;mg/kg showed <span style="background:var(--citation);padding:0 2px;">saturating Iba1 signal</span> that masked cohort differences <span style="display:inline-flex;align-items:center;gap:5px;padding:1px 6px;border:1px solid var(--line);border-radius:4px;background:var(--sunk);font:500 12.5px/1 var(--mono);color:var(--ink-soft);vertical-align:middle;">notebook_2026-03 · §dose</span>, and 0.5&nbsp;mg/kg keeps activation in a quantifiable range for the C57BL/6 line <span style="display:inline-flex;align-items:center;gap:5px;padding:1px 6px;border:1px solid var(--line);border-radius:4px;background:var(--sunk);font:500 12.5px/1 var(--mono);color:var(--ink-soft);vertical-align:middle;">protocol_v3 · §4.2</span>.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- three capabilities -->
+    <section style="max-width:1140px;margin:0 auto;padding:56px 32px;">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;">
+        <div style="border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:24px;">
+          <div style="width:34px;height:34px;border-radius:7px;background:var(--primary-soft);display:flex;align-items:center;justify-content:center;margin-bottom:14px;"><span style="width:14px;height:14px;border-radius:50%;border:2px solid var(--primary);"></span></div>
+          <h3 style="font:500 19px/1.3 var(--serif);margin:0 0 8px;">Reconstruct the why</h3>
+          <p style="font:400 15px/1.55 var(--sans);color:var(--ink-soft);margin:0;">Ask any decision and get its reasoning back — with every claim carrying a provenance chip to the exact source span.</p>
+        </div>
+        <div style="border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:24px;">
+          <div style="width:34px;height:34px;border-radius:7px;background:#EAECFB;display:flex;align-items:center;justify-content:center;margin-bottom:14px;"><span style="width:14px;height:8px;border:2px solid var(--link);border-radius:3px;"></span></div>
+          <h3 style="font:500 19px/1.3 var(--serif);margin:0 0 8px;">Surface precedent</h3>
+          <p style="font:400 15px/1.55 var(--sans);color:var(--ink-soft);margin:0;">“Have we ruled this out before?” Rhinalx matches your current case to prior ones and explains the resemblance.</p>
+        </div>
+        <div style="border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:24px;">
+          <div style="width:34px;height:34px;border-radius:7px;background:var(--attention-soft);display:flex;align-items:center;justify-content:center;margin-bottom:14px;"><span style="font:600 18px/1 var(--serif);color:var(--attention);">?</span></div>
+          <h3 style="font:500 19px/1.3 var(--serif);margin:0 0 8px;">Interview for gaps</h3>
+          <p style="font:400 15px/1.55 var(--sans);color:var(--ink-soft);margin:0;">When it notices missing rationale, it asks you — and files your answer as memory, attributed to your own words.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- local-first guarantee -->
+    <section style="background:var(--ink);color:var(--paper);">
+      <div style="max-width:1140px;margin:0 auto;padding:56px 32px;display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center;">
+        <div>
+          <div style="display:inline-flex;align-items:center;gap:8px;font:500 13px/1 var(--sans);color:var(--ok);margin-bottom:14px;"><span style="width:7px;height:7px;border-radius:50%;background:var(--ok);"></span>On this machine</div>
+          <h2 style="font:500 34px/1.15 var(--serif);margin:0 0 14px;letter-spacing:-.01em;">Your unpublished data never leaves this machine.</h2>
+          <p style="font:400 16px/1.6 var(--sans);color:#C9C5BB;margin:0 0 8px;max-width:460px;">Ingestion, embedding, and search run locally. A cloud model is used only when you explicitly allow it — and you can run entirely local.</p>
+        </div>
+        <div style="border:1px solid #33322D;border-radius:8px;background:#211F1B;padding:22px;font:500 13px/1.8 var(--mono);color:#C9C5BB;">
+          <div style="color:var(--ok);">● local embeddings — nomic-embed-text</div>
+          <div style="color:var(--ok);">● local index — 128 spans, on disk</div>
+          <div style="opacity:.7;">○ telemetry — none</div>
+          <div style="color:#E8B563;">◐ Claude — used only when allowed</div>
+        </div>
+      </div>
+    </section>
+
+    <footer style="max-width:1140px;margin:0 auto;padding:40px 32px 64px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);">
+      <span style="font:500 13px/1 var(--sans);color:var(--ink-faint);">Rhinalx · rationale memory for the bench</span>
+      <button onClick="{{ go.home }}" style="font:500 14px/1 var(--sans);color:var(--primary);">Open the app →</button>
+    </footer>
+  </div>
+  </sc-if>
+
+  <!-- ============ APP SHELL ============ -->
+  <sc-if value="{{ isApp }}" hint-placeholder-val="{{ true }}">
+  <div style="display:flex;height:100vh;">
+
+    <!-- LEFT RAIL -->
+    <aside style="width:236px;flex:none;border-right:1px solid var(--line);background:var(--surface);display:flex;flex-direction:column;">
+      <button onClick="{{ go.landing }}" style="display:flex;align-items:center;gap:9px;padding:16px 16px 12px;width:100%;text-align:left;">
+        <div style="width:22px;height:22px;border-radius:5px;background:var(--primary);position:relative;flex:none;">
+          <div style="position:absolute;inset:5px 5px auto 5px;height:2px;background:#fff;opacity:.9;"></div>
+          <div style="position:absolute;inset:9px 5px auto 5px;height:2px;background:#fff;opacity:.5;"></div>
+          <div style="position:absolute;inset:13px 5px auto 5px;height:2px;background:#fff;opacity:.28;"></div>
+        </div>
+        <span style="font:600 15px/1 var(--sans);letter-spacing:-.01em;">Rhinalx</span>
+      </button>
+
+      <!-- project switcher -->
+      <div style="margin:6px 12px 14px;padding:9px 11px;border:1px solid var(--line);border-radius:6px;background:var(--paper);display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
+        <div style="min-width:0;">
+          <div style="font:600 13px/1.3 var(--sans);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Microglia Cohort-B</div>
+          <div style="font:500 11.5px/1.2 var(--mono);color:var(--ink-faint);">study · v3</div>
+        </div>
+        <span style="color:var(--ink-faint);font-size:11px;">▾</span>
+      </div>
+
+      <nav class="pp-scroll" style="flex:1;overflow-y:auto;padding:0 12px;display:flex;flex-direction:column;gap:2px;">
+        <button onClick="{{ go.home }}" style="{{ nav.home }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M4 10 L12 3 L20 10 V20 H4 Z"></path></svg>Home</button>
+        <button onClick="{{ go.ask }}" style="{{ nav.ask }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M4 5 H20 V16 H9 L5 20 V16 H4 Z"></path></svg>Ask</button>
+        <button onClick="{{ go.questions }}" style="{{ nav.questions }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M6 3 V21 M6 4 H17 L15 8 L17 12 H6"></path></svg>Open Questions<span style="{{ badgeStyle }}">{{ openCount }}</span></button>
+        <button onClick="{{ go.timeline }}" style="{{ nav.timeline }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M4 7h16M4 12h16M4 17h16"></path></svg>Timeline</button>
+        <button onClick="{{ go.knowledge }}" style="{{ nav.knowledge }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M5 4h11a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2z M5 4v14"></path></svg>Knowledge</button>
+        <button onClick="{{ go.archive }}" style="{{ nav.archive }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M4 7h16v3H4z M5 10h14v10H5z M10 14h4"></path></svg>Archive</button>
+        <button onClick="{{ go.sources }}" style="{{ nav.sources }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M7 3h7l4 4v14H7z M14 3v4h4"></path></svg>Sources</button>
+        <button onClick="{{ go.search }}" style="{{ nav.search }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="6"></circle><path d="M20 20l-4-4"></path></svg>Search</button>
+      </nav>
+
+      <div style="border-top:1px solid var(--line);padding:10px 12px;">
+        <button onClick="{{ go.ingest }}" style="{{ nav.ingest }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M12 4v10 M8 10l4 4 4-4 M5 19h14"></path></svg>Ingest sources</button>
+        <button onClick="{{ go.settings }}" style="{{ nav.settings }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M4 8h9M18 8h2M4 16h6M15 16h5"></path><circle cx="15" cy="8" r="2"></circle><circle cx="12" cy="16" r="2"></circle></svg>Settings</button>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div style="flex:1;display:flex;flex-direction:column;min-width:0;position:relative;">
+
+      <!-- TOP BAR -->
+      <header style="height:56px;flex:none;border-bottom:1px solid var(--line);background:var(--surface);display:flex;align-items:center;gap:16px;padding:0 20px;">
+        <div style="display:flex;align-items:center;gap:9px;min-width:0;">
+          <span style="font:600 14px/1 var(--sans);white-space:nowrap;">Microglia Cohort-B</span>
+          <span style="font:500 11.5px/1 var(--mono);color:var(--primary);border:1px solid var(--primary-soft);background:var(--primary-soft);padding:2px 6px;border-radius:4px;">v3</span>
+        </div>
+        <button onClick="{{ openCmdk }}" style="margin-left:8px;flex:1;max-width:360px;display:flex;align-items:center;gap:8px;padding:7px 11px;border:1px solid var(--line);border-radius:6px;background:var(--paper);color:var(--ink-faint);font:500 13px/1 var(--sans);text-align:left;white-space:nowrap;overflow:hidden;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" style="flex:none;"><circle cx="11" cy="11" r="6"></circle><path d="M20 20l-4-4"></path></svg>
+          <span style="overflow:hidden;text-overflow:ellipsis;">Search sources, decisions, rationale…</span>
+          <span style="margin-left:auto;font:500 11.5px/1 var(--mono);border:1px solid var(--line);border-radius:4px;padding:2px 5px;background:var(--surface);">⌘K</span>
+        </button>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:14px;">
+          <div style="display:inline-flex;align-items:center;gap:7px;font:500 12.5px/1 var(--sans);color:var(--ink-soft);">
+            <span style="width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px rgba(62,155,110,.16);"></span>On this machine
+          </div>
+          <button onClick="{{ toggleBackend }}" style="display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:999px;overflow:hidden;font:600 12px/1 var(--sans);">
+            <span style="{{ beClaude }}">Claude when allowed</span>
+            <span style="{{ beLocal }}">Local only</span>
+          </button>
+          <button onClick="{{ go.settings }}" style="width:32px;height:32px;border-radius:6px;border:1px solid var(--line);background:var(--surface);display:flex;align-items:center;justify-content:center;color:var(--ink-soft);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M4 8h9M18 8h2M4 16h6M15 16h5"></path><circle cx="15" cy="8" r="2"></circle><circle cx="12" cy="16" r="2"></circle></svg></button>
+        </div>
+      </header>
+
+      <!-- CANVAS -->
+      <main class="pp-scroll" style="flex:1;overflow-y:auto;position:relative;">
+        <div style="padding:32px 36px;max-width:1080px;">
+
+          <!-- HOME -->
+          <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+          <div style="animation:pp-rise .2s ease-out;">
+            <p style="font:500 13px/1 var(--sans);color:var(--ink-faint);margin:0 0 6px;">Study overview</p>
+            <h1 style="font:500 32px/1.1 var(--serif);margin:0 0 24px;letter-spacing:-.01em;">Microglia Cohort-B</h1>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;">
+              <div style="border:1px solid var(--line);border-radius:6px;background:var(--surface);padding:16px 18px;"><div style="font:500 32px/1 var(--serif);">4</div><div style="font:500 13px/1 var(--sans);color:var(--ink-faint);margin-top:6px;">Sources</div></div>
+              <div style="border:1px solid var(--line);border-radius:6px;background:var(--surface);padding:16px 18px;"><div style="font:500 32px/1 var(--serif);">3</div><div style="font:500 13px/1 var(--sans);color:var(--ink-faint);margin-top:6px;">Decisions</div></div>
+              <div style="border:1px solid var(--line);border-radius:6px;background:var(--surface);padding:16px 18px;"><div style="font:500 32px/1 var(--serif);color:var(--primary);">5</div><div style="font:500 13px/1 var(--sans);color:var(--ink-faint);margin-top:6px;">Current rationale</div></div>
+              <div style="border:1px solid var(--line);border-radius:6px;background:var(--surface);padding:16px 18px;"><div style="font:500 32px/1 var(--serif);color:var(--attention);">2</div><div style="font:500 13px/1 var(--sans);color:var(--ink-faint);margin-top:6px;">Open questions</div></div>
+            </div>
+
+            <!-- open questions callout -->
+            <button onClick="{{ go.questions }}" style="width:100%;text-align:left;border:1px solid var(--attention);border-radius:8px;background:var(--attention-soft);padding:18px 20px;display:flex;align-items:center;gap:16px;margin-bottom:22px;">
+              <div style="width:38px;height:38px;flex:none;border-radius:8px;background:#fff;border:1px solid #EBD9AF;display:flex;align-items:center;justify-content:center;font:600 20px/1 var(--serif);color:var(--attention);">?</div>
+              <div style="flex:1;">
+                <div style="font:600 15px/1.3 var(--sans);color:#7A5312;">2 decisions are missing their rationale</div>
+                <div style="font:400 14px/1.4 var(--serif);color:var(--ink-soft);margin-top:3px;">Including an unexplained microglial marker swap (Iba1 → TMEM119). Rhinalx can interview you to fill the gap.</div>
+              </div>
+              <span style="font:600 13px/1 var(--sans);color:var(--attention);white-space:nowrap;">Answer now →</span>
+            </button>
+
+            <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:20px;">
+              <div>
+                <h2 style="font:500 18px/1 var(--serif);margin:0 0 12px;">Recent activity</h2>
+                <div style="border:1px solid var(--line);border-radius:8px;background:var(--surface);overflow:hidden;">
+                  <sc-for list="{{ recent }}" as="r" hint-placeholder-count="4">
+                    <div style="display:flex;align-items:flex-start;gap:12px;padding:13px 16px;border-bottom:1px solid var(--line);">
+                      <span style="width:7px;height:7px;border-radius:50%;background:var(--primary);margin-top:6px;flex:none;"></span>
+                      <div style="flex:1;"><div style="font:400 14px/1.4 var(--sans);">{{ r.t }}</div></div>
+                      <span style="font:500 12px/1 var(--mono);color:var(--ink-faint);white-space:nowrap;">{{ r.m }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+              <div>
+                <h2 style="font:500 18px/1 var(--serif);margin:0 0 12px;">Ask the study</h2>
+                <button onClick="{{ go.ask }}" style="width:100%;text-align:left;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:18px;">
+                  <div style="font:400 17px/1.35 var(--serif);color:var(--ink-faint);font-style:italic;">Why did we…</div>
+                  <div style="margin-top:14px;display:inline-flex;align-items:center;gap:7px;font:600 13px/1 var(--sans);color:var(--primary);">Open Ask <span>→</span></div>
+                </button>
+                <p style="font:400 13px/1.5 var(--sans);color:var(--ink-faint);margin:12px 2px 0;">Answers reconstruct reasoning with a provenance chip on every claim.</p>
+              </div>
+            </div>
+          </div>
+          </sc-if>
+
+          <!-- ASK -->
+          <sc-if value="{{ isAsk }}" hint-placeholder-val="{{ true }}">
+          <div style="animation:pp-rise .2s ease-out;max-width:720px;margin:0 auto;padding-top:24px;">
+            <h1 style="font:500 30px/1.1 var(--serif);margin:0 0 20px;text-align:center;letter-spacing:-.01em;">Ask the study</h1>
+            <div style="border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:6px 6px 6px 18px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 0 rgba(26,26,23,.02);">
+              <span style="font:400 18px/1 var(--serif);color:var(--ink-faint);font-style:italic;flex:1;">Why did we…</span>
+              <button onClick="{{ go.answer }}" style="background:var(--primary);color:#fff;padding:11px 18px;border-radius:7px;font:600 14px/1 var(--sans);">Reconstruct</button>
+            </div>
+            <div style="margin-top:26px;">
+              <p style="font:500 12px/1 var(--sans);color:var(--ink-faint);text-transform:uppercase;letter-spacing:.06em;margin:0 0 10px;">Try</p>
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <sc-for list="{{ examples }}" as="ex" hint-placeholder-count="3">
+                  <button onClick="{{ go.answer }}" style="text-align:left;border:1px solid var(--line);border-radius:7px;background:var(--surface);padding:13px 16px;font:400 16px/1.35 var(--serif);display:flex;align-items:center;justify-content:space-between;gap:12px;">{{ ex }}<span style="color:var(--ink-faint);font-size:14px;">→</span></button>
+                </sc-for>
+              </div>
+            </div>
+            <div style="margin-top:26px;">
+              <p style="font:500 12px/1 var(--sans);color:var(--ink-faint);text-transform:uppercase;letter-spacing:.06em;margin:0 0 10px;">Recent</p>
+              <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                <sc-for list="{{ recentQ }}" as="q" hint-placeholder-count="2">
+                  <span style="border:1px solid var(--line);border-radius:999px;background:var(--surface);padding:6px 13px;font:400 14px/1 var(--serif);color:var(--ink-soft);">{{ q }}</span>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+          </sc-if>
+
+          <!-- ANSWER -->
+          <sc-if value="{{ isAnswer }}" hint-placeholder-val="{{ true }}">
+          <div style="animation:pp-rise .2s ease-out;max-width:760px;">
+            <button onClick="{{ go.ask }}" style="font:500 13px/1 var(--sans);color:var(--ink-faint);margin-bottom:16px;display:inline-flex;align-items:center;gap:6px;">← Ask</button>
+            <p style="font:500 13px/1 var(--sans);color:var(--ink-faint);margin:0 0 8px;">You asked</p>
+            <h1 style="font:500 27px/1.25 var(--serif);margin:0 0 16px;letter-spacing:-.005em;">Why did we lower the LPS dose to 0.5 mg/kg?</h1>
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:22px;">
+              <span style="display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;background:var(--primary-soft);color:var(--primary);font:600 12.5px/1 var(--sans);"><span style="width:6px;height:6px;border-radius:50%;background:var(--primary);"></span>Claude</span>
+              <span style="font:500 12.5px/1 var(--sans);color:var(--ink-faint);">3 sources · reconstructed just now</span>
+            </div>
+
+            <div style="border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:26px 28px;">
+              <p style="font:400 19px/1.62 var(--serif);color:var(--ink);margin:0;">The LPS dose was lowered from 1.0 to 0.5&nbsp;mg/kg on 2&nbsp;March 2026 to keep microglial activation within a measurable dynamic range.<button onClick="{{ oc.dose }}" style="{{ chip }}">notebook_2026-03 · §dose</button> At 1.0&nbsp;mg/kg the pilot animals showed saturating Iba1 signal that masked between-cohort differences, which defeated the study's primary comparison.<button onClick="{{ oc.pilot }}" style="{{ chip }}">lab_meeting_0412 · §pilot</button> The 0.5&nbsp;mg/kg dose was chosen to match the effective range established for the C57BL/6 line used here.<button onClick="{{ oc.protocol }}" style="{{ chip }}">protocol_v3 · §4.2</button></p>
+            </div>
+
+            <div style="margin-top:16px;display:flex;align-items:center;gap:10px;">
+              <button style="border:1px solid var(--line);border-radius:6px;background:var(--surface);padding:9px 14px;font:500 13px/1 var(--sans);color:var(--ink-soft);">Save to Knowledge</button>
+              <button onClick="{{ go.precedent }}" style="border:1px solid var(--line);border-radius:6px;background:var(--surface);padding:9px 14px;font:500 13px/1 var(--sans);color:var(--link);">Find precedent</button>
+              <span style="margin-left:auto;font:400 13px/1.5 var(--sans);color:var(--ink-faint);">Click any <span style="font:500 12px/1 var(--mono);color:var(--ink-soft);">chip</span> to see its source span.</span>
+            </div>
+          </div>
+          </sc-if>
+
+          <!-- OPEN QUESTIONS -->
+          <sc-if value="{{ isQuestions }}" hint-placeholder-val="{{ true }}">
+          <div style="animation:pp-rise .2s ease-out;max-width:820px;">
+            <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:6px;">
+              <h1 style="font:500 30px/1.1 var(--serif);margin:0;letter-spacing:-.01em;">Open Questions</h1>
+              <span style="font:600 13px/1 var(--sans);color:var(--attention);background:var(--attention-soft);border:1px solid #EBD9AF;padding:5px 11px;border-radius:999px;white-space:nowrap;">2 gaps</span>
+            </div>
+            <p style="font:400 15px/1.5 var(--sans);color:var(--ink-soft);margin:0 0 22px;max-width:560px;">Rationale Rhinalx noticed is missing. Answering fills your memory — attributed to your own words.</p>
+            <div style="display:flex;flex-direction:column;gap:14px;">
+              <sc-for list="{{ questions }}" as="q" hint-placeholder-count="2">
+                <div style="border:1px solid var(--attention);border-left-width:4px;border-radius:8px;background:var(--surface);padding:20px 22px;">
+                  <div style="display:flex;align-items:center;gap:9px;margin-bottom:12px;">
+                    <span style="width:24px;height:24px;border-radius:6px;background:var(--attention-soft);color:var(--attention);display:flex;align-items:center;justify-content:center;font:600 14px/1 var(--serif);">?</span>
+                    <span style="font:600 12.5px/1 var(--sans);color:var(--attention);">Missing rationale</span>
+                    <span style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;font:500 11.5px/1 var(--mono);color:var(--ink-faint);border:1px solid var(--line);border-radius:4px;padding:3px 7px;">{{ q.ref }} · {{ q.refdate }}</span>
+                  </div>
+                  <p style="font:400 18px/1.5 var(--serif);color:var(--ink);margin:0 0 16px;">{{ q.q }}</p>
+                  <button onClick="{{ openInterview }}" style="background:var(--attention);color:#fff;padding:9px 15px;border-radius:6px;font:600 13px/1 var(--sans);">Answer now →</button>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          </sc-if>
+
+          <!-- PRECEDENT -->
+          <sc-if value="{{ isPrecedent }}" hint-placeholder-val="{{ true }}">
+          <div style="animation:pp-rise .2s ease-out;">
+            <div style="display:inline-flex;align-items:center;gap:7px;padding:5px 11px;border-radius:999px;background:#EAECFB;color:var(--link);font:600 12.5px/1 var(--sans);margin-bottom:12px;"><span style="width:6px;height:6px;border-radius:50%;background:var(--link);"></span>Precedent found</div>
+            <h1 style="font:500 28px/1.15 var(--serif);margin:0 0 6px;letter-spacing:-.005em;">Have we excluded animals for baseline inflammation before?</h1>
+            <p style="font:400 15px/1.5 var(--sans);color:var(--ink-soft);margin:0 0 24px;max-width:620px;">Yes — a matched decision in an earlier study. Both cases are cited below.</p>
+
+            <div style="display:grid;grid-template-columns:1fr 56px 1fr;gap:0;align-items:stretch;">
+              <div style="border:1px solid var(--primary);border-radius:8px;background:var(--surface);padding:20px 22px;">
+                <div style="font:600 12px/1 var(--sans);color:var(--primary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;">This study · current</div>
+                <p style="font:400 17px/1.5 var(--serif);margin:0 0 14px;">Three Cohort-B animals with elevated pre-existing microglial activation were excluded on 18&nbsp;Feb 2026.</p>
+                <span style="display:inline-flex;align-items:center;gap:5px;padding:2px 7px;border:1px solid var(--line);border-radius:4px;background:var(--sunk);font:500 12px/1 var(--mono);color:var(--ink-soft);">notebook_2026-02 · §exclusion</span>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:center;">
+                <div style="width:100%;height:1px;background:var(--link);position:relative;">
+                  <span style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:var(--paper);color:var(--link);font:600 11px/1 var(--sans);padding:4px 6px;border:1px solid var(--link);border-radius:999px;">≈</span>
+                </div>
+              </div>
+              <div style="border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:20px 22px;">
+                <div style="font:600 12px/1 var(--sans);color:var(--ink-faint);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;">Cohort-A pilot · 2025</div>
+                <p style="font:400 17px/1.5 var(--serif);margin:0 0 14px;">Four animals were excluded for the same criterion — baseline Iba1 above the 90th percentile confounded the LPS response.</p>
+                <span style="display:inline-flex;align-items:center;gap:5px;padding:2px 7px;border:1px solid var(--line);border-radius:4px;background:var(--sunk);font:500 12px/1 var(--mono);color:var(--ink-soft);">cohortA_report_2025 · §3.1</span>
+              </div>
+            </div>
+
+            <div style="margin-top:20px;border:1px solid #C9CFF3;border-radius:8px;background:#F4F5FE;padding:18px 20px;">
+              <div style="font:600 12.5px/1 var(--sans);color:var(--link);margin-bottom:8px;">Why these match</div>
+              <p style="font:400 16px/1.55 var(--serif);color:var(--ink);margin:0;">Both exclude animals whose baseline microglial activation would saturate the readout before treatment. The Cohort-A pilot set the 90th-percentile threshold now reused here — so this exclusion has precedent and a defined cutoff, not an ad-hoc call.</p>
+            </div>
+          </div>
+          </sc-if>
+
+          <!-- INGEST DROPZONE -->
+          <sc-if value="{{ isIngest }}" hint-placeholder-val="{{ true }}">
+          <div style="animation:pp-rise .2s ease-out;max-width:720px;margin:0 auto;padding-top:12px;">
+            <h1 style="font:500 30px/1.1 var(--serif);margin:0 0 8px;letter-spacing:-.01em;">Ingest sources</h1>
+            <p style="font:400 15px/1.5 var(--sans);color:var(--ink-soft);margin:0 0 22px;">Protocols, notebook entries, and meeting notes. Rhinalx reads them and extracts the decisions inside.</p>
+            <button onClick="{{ go.processing }}" style="width:100%;border:2px dashed #D9CFA8;border-radius:12px;background:var(--attention-soft);padding:48px 24px;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;">
+              <div style="width:52px;height:52px;border-radius:12px;background:#fff;border:1px solid #EBD9AF;display:flex;align-items:center;justify-content:center;color:var(--attention);"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 4v11 M7 9l5-5 5 5 M5 20h14"></path></svg></div>
+              <div><div style="font:500 18px/1.3 var(--serif);color:var(--ink);">Drop protocols, notebooks &amp; notes here</div><div style="font:400 14px/1.4 var(--sans);color:var(--ink-soft);margin-top:4px;">or click to choose files</div></div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;">
+                <span style="font:500 11.5px/1 var(--mono);color:var(--ink-faint);border:1px solid var(--line);background:#fff;border-radius:4px;padding:3px 7px;">.pdf</span>
+                <span style="font:500 11.5px/1 var(--mono);color:var(--ink-faint);border:1px solid var(--line);background:#fff;border-radius:4px;padding:3px 7px;">.md</span>
+                <span style="font:500 11.5px/1 var(--mono);color:var(--ink-faint);border:1px solid var(--line);background:#fff;border-radius:4px;padding:3px 7px;">.txt</span>
+                <span style="font:500 11.5px/1 var(--mono);color:var(--ink-faint);border:1px solid var(--line);background:#fff;border-radius:4px;padding:3px 7px;">.docx</span>
+              </div>
+            </button>
+            <div style="margin-top:16px;display:flex;align-items:center;gap:9px;justify-content:center;font:500 13px/1 var(--sans);color:var(--ok);"><span style="width:8px;height:8px;border-radius:50%;background:var(--ok);"></span>Nothing is uploaded anywhere — files are read locally, on this machine.</div>
+          </div>
+          </sc-if>
+
+          <!-- INGEST PROCESSING -->
+          <sc-if value="{{ isProcessing }}" hint-placeholder-val="{{ true }}">
+          <div style="animation:pp-rise .2s ease-out;max-width:660px;margin:0 auto;padding-top:16px;">
+            <h1 style="font:500 28px/1.1 var(--serif);margin:0 0 6px;letter-spacing:-.01em;">Reading your sources</h1>
+            <p style="font:400 14px/1.4 var(--sans);color:var(--ink-faint);margin:0 0 22px;">Local · nothing leaves this machine</p>
+
+            <div style="height:6px;border-radius:999px;background:var(--sunk);overflow:hidden;margin-bottom:26px;"><div style="height:100%;background:var(--primary);border-radius:999px;transition:width .2s ease-out;width:{{ procPct }};"></div></div>
+
+            <div style="display:flex;flex-direction:column;gap:12px;">
+              <div style="display:flex;align-items:center;gap:14px;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:16px 18px;">
+                <span style="{{ stepDot.parse }}"></span>
+                <div style="flex:1;"><div style="font:500 15px/1.3 var(--sans);">Parsing documents</div></div>
+                <span style="font:600 15px/1 var(--mono);color:var(--ink-soft);">{{ docsN }}/4</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:16px 18px;">
+                <span style="{{ stepDot.extract }}"></span>
+                <div style="flex:1;"><div style="font:500 15px/1.3 var(--sans);">Extracting decisions <span style="color:var(--ink-faint);font-weight:400;">(episodes)</span></div></div>
+                <span style="font:600 15px/1 var(--mono);color:var(--primary);">{{ epsN }} found</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:16px 18px;">
+                <span style="{{ stepDot.index }}"></span>
+                <div style="flex:1;"><div style="font:500 15px/1.3 var(--sans);">Indexing grounding spans</div></div>
+                <span style="font:600 15px/1 var(--mono);color:var(--ink-soft);">{{ spansN }}</span>
+              </div>
+            </div>
+
+            <sc-if value="{{ procDone }}" hint-placeholder-val="{{ false }}">
+              <div style="margin-top:22px;border:1px solid var(--primary-soft);border-radius:8px;background:var(--primary-soft);padding:18px 20px;animation:pp-rise .25s ease-out;">
+                <div style="font:600 14px/1 var(--sans);color:var(--primary);margin-bottom:10px;">3 decisions extracted from 4 sources</div>
+                <div style="display:flex;flex-direction:column;gap:7px;font:400 15px/1.4 var(--serif);color:var(--ink);">
+                  <div>• Antibody swap — Iba1 → TMEM119 <span style="font:500 12px/1 var(--mono);color:var(--attention);margin-left:6px;">· no rationale recorded</span></div>
+                  <div>• LPS dose change — 1.0 → 0.5 mg/kg</div>
+                  <div>• Cohort exclusion — 3 animals, baseline inflammation</div>
+                </div>
+                <button onClick="{{ go.home }}" style="margin-top:16px;background:var(--primary);color:#fff;padding:10px 16px;border-radius:6px;font:600 13px/1 var(--sans);">Enter workspace →</button>
+              </div>
+            </sc-if>
+          </div>
+          </sc-if>
+
+          <!-- ARCHIVE -->
+          <sc-if value="{{ isArchive }}" hint-placeholder-val="{{ true }}">
+          <div style="animation:pp-rise .2s ease-out;max-width:760px;">
+            <h1 style="font:500 30px/1.1 var(--serif);margin:0 0 6px;letter-spacing:-.01em;">Archive</h1>
+            <p style="font:400 15px/1.5 var(--sans);color:var(--ink-soft);margin:0 0 8px;max-width:560px;">Superseded rationale, dimmed and set a layer behind — still fully readable and searchable.</p>
+            <div style="display:inline-flex;align-items:center;gap:8px;font:500 13px/1 var(--sans);color:var(--archive);border:1px solid #E4D6B6;background:#FBF6EA;border-radius:6px;padding:8px 12px;margin-bottom:24px;">Nothing is ever deleted.</div>
+
+            <div style="position:relative;">
+              <div style="position:relative;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:22px 24px;opacity:.62;filter:saturate(.85);">
+                <div style="position:absolute;top:14px;right:16px;display:inline-flex;align-items:center;gap:6px;font:500 11.5px/1 var(--mono);color:var(--archive);border:1px solid #E4D6B6;background:#FBF6EA;border-radius:4px;padding:3px 8px;">archived · v2</div>
+                <div style="font:600 12.5px/1 var(--sans);color:var(--archive);margin-bottom:8px;">Superseded rationale</div>
+                <p style="font:400 17px/1.55 var(--serif);color:var(--ink);margin:0 0 12px;max-width:560px;">We used Iba1 as the microglial marker because it was the lab's established stain and matched the Cohort-A pilot.</p>
+                <span style="display:inline-flex;align-items:center;gap:5px;padding:2px 7px;border:1px solid var(--line);border-radius:4px;background:var(--sunk);font:500 12px/1 var(--mono);color:var(--ink-soft);">protocol_v2 · §staining</span>
+              </div>
+              <div style="height:16px;"></div>
+              <div style="position:relative;border:1px solid var(--line);border-radius:8px;background:var(--surface);padding:22px 24px;opacity:.62;filter:saturate(.85);">
+                <div style="position:absolute;top:14px;right:16px;display:inline-flex;align-items:center;gap:6px;font:500 11.5px/1 var(--mono);color:var(--archive);border:1px solid #E4D6B6;background:#FBF6EA;border-radius:4px;padding:3px 8px;">archived · v1</div>
+                <div style="font:600 12.5px/1 var(--sans);color:var(--archive);margin-bottom:8px;">Superseded rationale</div>
+                <p style="font:400 17px/1.55 var(--serif);color:var(--ink);margin:0 0 12px;max-width:560px;">LPS was dosed at 1.0 mg/kg to maximise the activation signal in the pilot run.</p>
+                <span style="display:inline-flex;align-items:center;gap:5px;padding:2px 7px;border:1px solid var(--line);border-radius:4px;background:var(--sunk);font:500 12px/1 var(--mono);color:var(--ink-soft);">protocol_v1 · §dosing</span>
+              </div>
+            </div>
+          </div>
+          </sc-if>
+
+          <!-- SETTINGS -->
+          <sc-if value="{{ isSettings }}" hint-placeholder-val="{{ true }}">
+          <div style="animation:pp-rise .2s ease-out;max-width:680px;">
+            <h1 style="font:500 30px/1.1 var(--serif);margin:0 0 24px;letter-spacing:-.01em;">Settings</h1>
+            <div style="border:1px solid var(--line);border-radius:8px;background:var(--surface);overflow:hidden;">
+              <div style="padding:18px 20px;border-bottom:1px solid var(--line);">
+                <div style="font:600 14px/1 var(--sans);margin-bottom:12px;">Models &amp; policy</div>
+                <div style="display:flex;flex-direction:column;gap:10px;">
+                  <div style="display:flex;align-items:center;gap:12px;"><span style="width:8px;height:8px;border-radius:50%;background:var(--ok);"></span><span style="font:500 13px/1 var(--mono);color:var(--ink-soft);">nomic-embed-text</span><span style="margin-left:auto;font:500 12px/1 var(--sans);color:var(--ok);">local · ready</span></div>
+                  <div style="display:flex;align-items:center;gap:12px;"><span style="width:8px;height:8px;border-radius:50%;background:var(--ok);"></span><span style="font:500 13px/1 var(--mono);color:var(--ink-soft);">llama3.1:8b</span><span style="margin-left:auto;font:500 12px/1 var(--sans);color:var(--ok);">local · ready</span></div>
+                  <div style="display:flex;align-items:center;gap:12px;"><span style="width:8px;height:8px;border-radius:50%;background:var(--primary);"></span><span style="font:500 13px/1 var(--mono);color:var(--ink-soft);">claude</span><span style="margin-left:auto;display:inline-flex;align-items:center;gap:6px;font:600 11.5px/1 var(--sans);color:var(--primary);background:var(--primary-soft);padding:3px 8px;border-radius:999px;">when allowed</span></div>
+                </div>
+              </div>
+              <div style="padding:18px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;">
+                <div><div style="font:600 14px/1.3 var(--sans);">Data location</div><div style="font:500 12.5px/1.4 var(--mono);color:var(--ink-faint);margin-top:4px;">~/research/cohort-b/.rhinalx</div></div>
+                <button style="border:1px solid var(--line);border-radius:6px;padding:8px 13px;font:500 13px/1 var(--sans);color:var(--ink-soft);">Change</button>
+              </div>
+              <div style="padding:18px 20px;display:flex;align-items:center;justify-content:space-between;">
+                <div><div style="font:600 14px/1.3 var(--sans);">Export memory</div><div style="font:400 12.5px/1.4 var(--sans);color:var(--ink-faint);margin-top:4px;">One portable, auditable file — sources, decisions, and rationale.</div></div>
+                <button style="border:1px solid var(--primary);color:var(--primary);border-radius:6px;padding:8px 13px;font:600 13px/1 var(--sans);">Export .rhinalx</button>
+              </div>
+            </div>
+          </div>
+          </sc-if>
+
+          <!-- MORE (timeline/knowledge/sources/search placeholders) -->
+          <sc-if value="{{ isMore }}" hint-placeholder-val="{{ false }}">
+          <div style="animation:pp-rise .2s ease-out;max-width:560px;padding-top:40px;">
+            <div style="width:44px;height:44px;border-radius:10px;background:var(--sunk);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;margin-bottom:16px;color:var(--ink-faint);"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 7h16M4 12h16M4 17h16"></path></svg></div>
+            <h1 style="font:500 28px/1.15 var(--serif);margin:0 0 10px;letter-spacing:-.01em;">{{ more.title }}</h1>
+            <p style="font:400 16px/1.6 var(--serif);color:var(--ink-soft);margin:0 0 20px;">{{ more.desc }}</p>
+            <button onClick="{{ go.home }}" style="border:1px solid var(--line);border-radius:6px;background:var(--surface);padding:9px 15px;font:500 13px/1 var(--sans);color:var(--primary);">← Back to Home</button>
+          </div>
+          </sc-if>
+
+        </div>
+      </main>
+
+      <!-- SOURCE-SPAN PANEL (provenance popover) -->
+      <sc-if value="{{ panelOpen }}" hint-placeholder-val="{{ false }}">
+      <div style="position:absolute;top:57px;right:0;bottom:0;width:396px;border-left:1px solid var(--line);background:var(--surface);box-shadow:-16px 0 40px -30px rgba(26,26,23,.4);display:flex;flex-direction:column;animation:pp-slide-in .18s ease-out;z-index:20;">
+        <div style="height:52px;flex:none;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 18px;">
+          <span style="font:600 13px/1 var(--sans);">Source span</span>
+          <button onClick="{{ closePanel }}" style="width:26px;height:26px;border-radius:6px;color:var(--ink-faint);display:flex;align-items:center;justify-content:center;font-size:16px;">✕</button>
+        </div>
+        <div class="pp-scroll" style="flex:1;overflow-y:auto;padding:18px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--ink-faint)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M7 3h7l4 4v14H7z M14 3v4h4"></path></svg>
+            <span style="font:600 13px/1 var(--mono);color:var(--ink);">{{ ac.doc }}</span>
+          </div>
+          <div style="font:500 12px/1 var(--mono);color:var(--ink-faint);margin-bottom:16px;">{{ ac.section }} · {{ ac.date }}</div>
+          <div style="border:1px solid var(--line);border-radius:6px;background:var(--sunk);padding:16px;font:400 13px/1.7 var(--mono);color:var(--ink-soft);">{{ ac.before }}<mark style="background:var(--citation);color:var(--ink);padding:1px 2px;border-radius:2px;animation:pp-pulse 1.2s ease-in-out 1;">{{ ac.hl }}</mark>{{ ac.after }}</div>
+          <div style="margin-top:16px;display:flex;align-items:center;gap:8px;">
+            <span style="width:14px;height:14px;border-radius:3px;background:var(--citation);border:1px solid #E0D69B;flex:none;"></span>
+            <span style="font:400 12.5px/1.4 var(--sans);color:var(--ink-faint);">Highlighted text is the exact span grounding this claim.</span>
+          </div>
+          <button style="margin-top:18px;width:100%;border:1px solid var(--line);border-radius:6px;background:var(--surface);padding:9px;font:500 13px/1 var(--sans);color:var(--ink-soft);">Open full document →</button>
+        </div>
+      </div>
+      </sc-if>
+
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ============ INTERVIEW MODAL ============ -->
+  <sc-if value="{{ interviewOpen }}" hint-placeholder-val="{{ false }}">
+  <div onClick="{{ closeInterview }}" style="position:fixed;inset:0;background:rgba(26,26,23,.34);display:flex;align-items:center;justify-content:center;z-index:60;padding:24px;">
+    <div onClick="{{ stop }}" style="width:100%;max-width:560px;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:0 30px 80px -30px rgba(26,26,23,.5);overflow:hidden;animation:pp-rise .2s ease-out;">
+      <div style="height:6px;background:var(--attention);"></div>
+      <div style="padding:26px 28px;">
+        <sc-if value="{{ notAnswered }}" hint-placeholder-val="{{ true }}">
+        <div>
+          <div style="display:flex;align-items:center;gap:9px;margin-bottom:18px;">
+            <span style="width:28px;height:28px;border-radius:7px;background:var(--attention-soft);color:var(--attention);display:flex;align-items:center;justify-content:center;font:600 16px/1 var(--serif);">?</span>
+            <span style="font:600 13px/1 var(--sans);color:var(--attention);">Rhinalx is asking</span>
+            <button onClick="{{ closeInterview }}" style="margin-left:auto;color:var(--ink-faint);font-size:16px;">✕</button>
+          </div>
+          <p style="font:400 21px/1.45 var(--serif);color:var(--ink);margin:0 0 16px;">Between protocol v2 and v3 the microglial marker changed from Iba1 to TMEM119, but no reason was recorded. Why was the marker swapped?</p>
+          <div style="display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:6px;background:var(--paper);padding:8px 12px;margin-bottom:18px;">
+            <span style="width:7px;height:7px;border-radius:50%;background:var(--archive);"></span>
+            <span style="font:500 12.5px/1 var(--mono);color:var(--ink-soft);">Decision · Antibody swap · 2026-04-12</span>
+          </div>
+          <textarea placeholder="TMEM119 is microglia-specific — Iba1 also labels infiltrating macrophages, which confounded the Cohort-B inflammation model…" style="width:100%;min-height:104px;resize:vertical;border:1px solid var(--line);border-radius:6px;padding:12px 14px;font:400 15px/1.55 var(--serif);color:var(--ink);background:var(--paper);outline:none;"></textarea>
+          <div style="display:flex;align-items:center;gap:10px;margin-top:16px;">
+            <button onClick="{{ submitInterview }}" style="background:var(--attention);color:#fff;padding:10px 18px;border-radius:6px;font:600 14px/1 var(--sans);">File this rationale</button>
+            <button onClick="{{ closeInterview }}" style="padding:10px 14px;font:500 14px/1 var(--sans);color:var(--ink-soft);">Skip for now</button>
+            <span style="margin-left:auto;font:400 12px/1.4 var(--sans);color:var(--ink-faint);text-align:right;max-width:170px;">Filed as memory, attributed to your words.</span>
+          </div>
+        </div>
+        </sc-if>
+        <sc-if value="{{ answered }}" hint-placeholder-val="{{ false }}">
+        <div style="text-align:center;padding:14px 8px;">
+          <div style="width:52px;height:52px;border-radius:50%;background:var(--primary-soft);color:var(--primary);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:24px;">✓</div>
+          <h3 style="font:500 22px/1.3 var(--serif);margin:0 0 8px;">Filed into Knowledge</h3>
+          <p style="font:400 15px/1.5 var(--sans);color:var(--ink-soft);margin:0 0 6px;max-width:380px;margin-left:auto;margin-right:auto;">The antibody swap now carries your rationale.</p>
+          <div style="display:inline-flex;align-items:center;gap:7px;margin-top:8px;border:1px solid var(--line);border-radius:6px;background:var(--paper);padding:6px 11px;font:500 12px/1 var(--mono);color:var(--ink-soft);"><span style="width:6px;height:6px;border-radius:50%;background:var(--primary);"></span>you · 2026-07-07</div>
+          <div style="margin-top:20px;"><button onClick="{{ closeInterview }}" style="background:var(--primary);color:#fff;padding:10px 18px;border-radius:6px;font:600 14px/1 var(--sans);">Done</button></div>
+        </div>
+        </sc-if>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ============ COMMAND PALETTE ============ -->
+  <sc-if value="{{ cmdkOpen }}" hint-placeholder-val="{{ false }}">
+  <div onClick="{{ closeCmdk }}" style="position:fixed;inset:0;background:rgba(26,26,23,.28);display:flex;align-items:flex-start;justify-content:center;z-index:70;padding-top:14vh;">
+    <div onClick="{{ stop }}" style="width:100%;max-width:520px;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 30px 80px -30px rgba(26,26,23,.5);overflow:hidden;animation:pp-rise .16s ease-out;">
+      <div style="display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line);">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--ink-faint)" strokeWidth="1.6" strokeLinecap="round"><circle cx="11" cy="11" r="6"></circle><path d="M20 20l-4-4"></path></svg>
+        <input autofocus placeholder="Go to, or search the study…" style="flex:1;border:none;outline:none;font:400 15px/1 var(--sans);color:var(--ink);background:transparent;">
+        <span style="font:500 11px/1 var(--mono);color:var(--ink-faint);border:1px solid var(--line);border-radius:4px;padding:2px 5px;">esc</span>
+      </div>
+      <div style="padding:8px;">
+        <sc-for list="{{ cmds }}" as="c" hint-placeholder-count="6">
+          <button onClick="{{ c.act }}" style="width:100%;text-align:left;display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:6px;font:500 14px/1 var(--sans);color:var(--ink);" style-hover="background:var(--paper);">
+            <span style="width:6px;height:6px;border-radius:50%;background:{{ c.dot }};flex:none;"></span>{{ c.label }}
+            <span style="margin-left:auto;font:400 12px/1 var(--sans);color:var(--ink-faint);">{{ c.hint }}</span>
+          </button>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = {
+    screen: 'landing',
+    moreKey: 'timeline',
+    activeChip: null,
+    panelOpen: false,
+    interviewOpen: false,
+    answered: false,
+    cmdkOpen: false,
+    backend: 'claude',
+    proc: 0
+  };
+
+  componentDidMount() {
+    this._key = (e) => {
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault();
+        this.setState(s => ({ cmdkOpen: !s.cmdkOpen }));
+      } else if (e.key === 'Escape') {
+        this.setState({ cmdkOpen: false, panelOpen: false, interviewOpen: false });
+      }
+    };
+    window.addEventListener('keydown', this._key);
+  }
+  componentWillUnmount() {
+    window.removeEventListener('keydown', this._key);
+    clearInterval(this._t);
+  }
+
+  goTo(screen, moreKey) {
+    clearInterval(this._t);
+    const st = { screen, panelOpen: false, activeChip: null, cmdkOpen: false };
+    if (moreKey) st.moreKey = moreKey;
+    this.setState(st);
+    if (screen === 'processing') this.startProc();
+  }
+
+  startProc() {
+    this.setState({ proc: 0 });
+    clearInterval(this._t);
+    this._t = setInterval(() => {
+      this.setState(s => {
+        const p = Math.min(100, s.proc + 3);
+        if (p >= 100) clearInterval(this._t);
+        return { proc: p };
+      });
+    }, 70);
+  }
+
+  openChip(id) { this.setState({ activeChip: id, panelOpen: true }); }
+
+  navStyle(active) {
+    return 'display:flex;align-items:center;gap:10px;padding:8px 11px;border-radius:6px;width:100%;text-align:left;font:500 14px/1 var(--sans);'
+      + (active
+        ? 'color:var(--primary);background:var(--primary-soft);'
+        : 'color:var(--ink-soft);background:transparent;');
+  }
+
+  dot(state) {
+    // state: 'done' | 'active' | 'idle'
+    const base = 'width:16px;height:16px;border-radius:50%;flex:none;display:inline-block;';
+    if (state === 'done') return base + 'background:var(--primary);box-shadow:inset 0 0 0 2px var(--surface),0 0 0 2px var(--primary);';
+    if (state === 'active') return base + 'background:var(--surface);border:2px solid var(--primary);box-shadow:0 0 0 3px var(--primary-soft);';
+    return base + 'background:var(--surface);border:2px solid var(--line);';
+  }
+
+  renderVals() {
+    const s = this.state;
+    const screen = s.screen;
+    const go = {
+      landing: () => this.goTo('landing'),
+      home: () => this.goTo('home'),
+      ask: () => this.goTo('ask'),
+      answer: () => this.goTo('answer'),
+      questions: () => this.goTo('questions'),
+      precedent: () => this.goTo('precedent'),
+      ingest: () => this.goTo('ingest'),
+      processing: () => this.goTo('processing'),
+      archive: () => this.goTo('archive'),
+      settings: () => this.goTo('settings'),
+      timeline: () => this.goTo('more', 'timeline'),
+      knowledge: () => this.goTo('more', 'knowledge'),
+      sources: () => this.goTo('more', 'sources'),
+      search: () => this.goTo('more', 'search')
+    };
+
+    const chips = {
+      dose: { doc: 'notebook_2026-03.md', section: '§dose-titration', date: '2026-03-02', before: 'Pilot run at 1.0 mg/kg produced ', hl: 'saturating Iba1 signal across all fields, obscuring cohort-level differences', after: '; recommend halving the dose for the main study.' },
+      pilot: { doc: 'lab_meeting_0412.txt', section: '§pilot-review', date: '2026-04-12', before: 'Consensus in meeting: ', hl: '0.5 mg/kg keeps activation in a linear, quantifiable range', after: ' for the C57BL/6 line — everyone agreed to standardise on it.' },
+      protocol: { doc: 'protocol_v3.pdf', section: '§4.2 dosing', date: '2026-04-01', before: 'LPS challenge — ', hl: '0.5 mg/kg i.p., single injection', after: ', consistent with the published effective range for this strain.' }
+    };
+    const ac = chips[s.activeChip] || {};
+
+    const moreMap = {
+      timeline: { title: 'Decision timeline', desc: 'Decisions as strata over time — protocol v1 → v2 → v3, exclusions, and swaps, with current in teal and superseded in ochre. This view is stubbed in the prototype; the demo path runs through Home, Ask, Open Questions and Precedent.' },
+      knowledge: { title: 'Knowledge library', desc: 'Your consolidated, current rationale as cards grouped by theme, each backed by its supporting episodes and provenance chips. Stubbed in the prototype.' },
+      sources: { title: 'Sources', desc: 'Every ingested document, read locally. Opening one shows its grounding spans highlighted in place. Stubbed in the prototype — try the source-span panel from any Answer chip instead.' },
+      search: { title: 'Global search', desc: 'Search across sources, decisions, rationale, and archive — results typed and provenance-first. Press ⌘K anywhere to open the command palette.' }
+    };
+
+    const be = (on) => 'padding:6px 11px;font:600 12px/1 var(--sans);'
+      + (on ? 'background:var(--primary);color:#fff;' : 'background:var(--surface);color:var(--ink-faint);');
+
+    const pct = s.proc + '%';
+    const stepState = (start, end) => s.proc >= end ? 'done' : (s.proc >= start ? 'active' : 'idle');
+
+    const cmds = [
+      { label: 'Home', hint: 'overview', dot: 'var(--primary)', act: go.home },
+      { label: 'Ask the study', hint: 'reconstruct why', dot: 'var(--primary)', act: go.ask },
+      { label: 'Open Questions', hint: '2 gaps', dot: 'var(--attention)', act: go.questions },
+      { label: 'Find precedent', hint: 'have we before?', dot: 'var(--link)', act: go.precedent },
+      { label: 'Ingest sources', hint: 'add documents', dot: 'var(--ink-faint)', act: go.ingest },
+      { label: 'Archive', hint: 'superseded', dot: 'var(--archive)', act: go.archive }
+    ];
+
+    return {
+      isLanding: screen === 'landing',
+      isApp: screen !== 'landing',
+      isHome: screen === 'home',
+      isAsk: screen === 'ask',
+      isAnswer: screen === 'answer',
+      isQuestions: screen === 'questions',
+      isPrecedent: screen === 'precedent',
+      isIngest: screen === 'ingest',
+      isProcessing: screen === 'processing',
+      isArchive: screen === 'archive',
+      isSettings: screen === 'settings',
+      isMore: screen === 'more',
+      more: moreMap[s.moreKey] || moreMap.timeline,
+
+      go,
+      openCmdk: () => this.setState({ cmdkOpen: true }),
+      closeCmdk: () => this.setState({ cmdkOpen: false }),
+      cmdkOpen: s.cmdkOpen,
+      cmds,
+      stop: (e) => e.stopPropagation(),
+
+      toggleBackend: () => this.setState(st => ({ backend: st.backend === 'claude' ? 'local' : 'claude' })),
+      beClaude: be(s.backend === 'claude'),
+      beLocal: be(s.backend === 'local'),
+
+      nav: {
+        home: this.navStyle(screen === 'home'),
+        ask: this.navStyle(screen === 'ask' || screen === 'answer'),
+        questions: this.navStyle(screen === 'questions'),
+        timeline: this.navStyle(screen === 'more' && s.moreKey === 'timeline'),
+        knowledge: this.navStyle(screen === 'more' && s.moreKey === 'knowledge'),
+        archive: this.navStyle(screen === 'archive'),
+        sources: this.navStyle(screen === 'more' && s.moreKey === 'sources'),
+        search: this.navStyle(screen === 'more' && s.moreKey === 'search'),
+        ingest: this.navStyle(screen === 'ingest' || screen === 'processing'),
+        settings: this.navStyle(screen === 'settings')
+      },
+      badgeStyle: 'margin-left:auto;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--attention);color:#fff;font:600 11px/18px var(--sans);text-align:center;',
+      openCount: 2,
+
+      recent: [
+        { t: 'Extracted decision — antibody swap (Iba1 → TMEM119)', m: '2026-04-12' },
+        { t: 'Answered — “Why lower the LPS dose?” filed to Knowledge', m: '2026-04-10' },
+        { t: 'Ingested — lab_meeting_0412.txt', m: '2026-04-12' },
+        { t: 'Open question raised — unexplained marker swap', m: '2026-04-12' }
+      ],
+      examples: [
+        'Why did we exclude three animals from Cohort-B?',
+        'Why did the LPS dose drop to 0.5 mg/kg?',
+        'Have we ruled out this exclusion criterion before?'
+      ],
+      recentQ: ['Why lower the LPS dose?', 'What criterion excluded the Feb cohort?'],
+      questions: [
+        { q: 'Between protocol v2 and v3 the microglial marker changed from Iba1 to TMEM119, but no reason was recorded. Why was the marker swapped?', ref: 'Antibody swap', refdate: '2026-04-12' },
+        { q: 'Three animals were removed from Cohort-B on 18 Feb with no exclusion criterion noted. What ruled them out?', ref: 'Cohort exclusion', refdate: '2026-02-18' }
+      ],
+
+      chip: 'display:inline-flex;align-items:baseline;gap:5px;margin:0 2px;padding:1px 7px;border:1px solid var(--line);border-radius:4px;background:var(--sunk);color:var(--ink-soft);font:500 12.5px/1.3 var(--mono);cursor:pointer;vertical-align:baseline;white-space:nowrap;',
+      oc: {
+        dose: () => this.openChip('dose'),
+        pilot: () => this.openChip('pilot'),
+        protocol: () => this.openChip('protocol')
+      },
+      panelOpen: s.panelOpen,
+      closePanel: () => this.setState({ panelOpen: false, activeChip: null }),
+      ac,
+
+      // processing
+      procPct: pct,
+      docsN: Math.min(4, Math.round(s.proc / 22)),
+      epsN: Math.min(3, Math.floor(s.proc / 30)),
+      spansN: Math.round(s.proc / 100 * 128),
+      procDone: s.proc >= 100,
+      stepDot: {
+        parse: this.dot(stepState(0, 45)),
+        extract: this.dot(stepState(45, 85)),
+        index: this.dot(stepState(85, 100))
+      },
+
+      // interview
+      interviewOpen: s.interviewOpen,
+      openInterview: () => this.setState({ interviewOpen: true, answered: false }),
+      closeInterview: () => this.setState({ interviewOpen: false, answered: false }),
+      submitInterview: () => this.setState({ answered: true }),
+      answered: s.answered,
+      notAnswered: !s.answered
+    };
+  }
+}
+</script>
+</body>
+</html>
