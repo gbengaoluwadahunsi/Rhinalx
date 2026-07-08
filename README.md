@@ -1,9 +1,13 @@
-# Rhinalx — an AI memory system for scientific reasoning
+<p align="center">
+  <img src="docs/banner.svg" alt="Rhinalx — an AI memory system for scientific reasoning" width="860">
+</p>
 
-> Laboratories don't lose data. They lose **decisions**. Rhinalx makes scientific
-> reasoning permanent.
+<h1 align="center">Rhinalx</h1>
 
-`local-first` · `provenance-always` · `Claude + Ollama hybrid` · `MCP server`
+<p align="center">
+  <em>Laboratories don't lose data. They lose <strong>decisions</strong>.<br/>
+  Rhinalx makes scientific reasoning permanent.</em>
+</p>
 
 A lab notebook records *what* happened — the dose, the antibody, the cohort, the
 date — but almost never *why*: why the dose dropped between cohorts, why an animal
@@ -67,6 +71,22 @@ deleted**, and weighted down → **Archive**.
 
 ---
 
+## Screenshots
+
+> _Drop three PNGs into [`docs/screenshots/`](docs/screenshots/) — the study
+> overview, a cited "why" answer, and the Open Questions inbox — then uncomment the
+> block below. See that folder's README for the exact filenames._
+
+<!-- Uncomment once the images exist:
+<p align="center">
+  <img src="docs/screenshots/01-home.png" alt="Study overview with live counts and the missing-rationale banner" width="900"><br/><br/>
+  <img src="docs/screenshots/02-ask.png" alt="A reconstructed why-answer with a provenance chip on every claim" width="900"><br/><br/>
+  <img src="docs/screenshots/03-open-questions.png" alt="The proactive-interview inbox" width="900">
+</p>
+-->
+
+---
+
 ## Use it on your own study
 
 The demo dataset is only a starting point — Rhinalx works on your real records.
@@ -101,32 +121,9 @@ have to leave your machine.
 
 ## Architecture
 
-```
-             ┌──────────────────────────── sources ────────────────────────────┐
-             │ protocols · notebook entries · meeting notes · decision records  │
-             └───────────────────────────────┬─────────────────────────────────┘
-                                              │  ingest (span-preserving)
-                                              ▼
-   ┌───────────────────────── memory engine (backend/memory) ─────────────────────────┐
-   │  episodic capture · gap detection + interview · consolidation (episodic→semantic) │
-   │  adaptive forgetting (archive, never delete) · precedent · span-returning retrieve │
-   └───────────────┬──────────────────────────────────────────────┬───────────────────┘
-                   │                                               │
-     one interface │  reason() / embed()  (backend/inference/router.py)
-                   ▼                                               ▼
-        ┌────────────────────┐                         ┌───────────────────────┐
-        │  Claude (reasoning) │   ◄── POLICY toggle ──► │  Ollama (local)        │
-        │  claude-sonnet-5    │                         │  llama3.1:8b · nomic   │
-        └────────────────────┘                         └───────────────────────┘
-                   │                                               │
-                   └───────────────► SQLite + sqlite-vec ◄─────────┘
-                                    (data/rhinalx.db, one portable file)
-                                              │
-                 ┌────────────────────────────┼────────────────────────────┐
-                 ▼                                                          ▼
-        FastAPI + React UI                                        Rhinalx MCP server
-     (question box · inbox · timeline)                     (Claude Desktop / Claude Code)
-```
+<p align="center">
+  <img src="docs/architecture.svg" alt="Rhinalx architecture: sources to memory engine to a reason()/embed() router over Claude or Ollama, one SQLite store, served to the web UI and the MCP server" width="920">
+</p>
 
 Reasoning calls (gap detection, interview questions, "why" assembly, precedent
 explanation, consolidation) go to **Claude** when policy allows and fall back to a
@@ -240,6 +237,31 @@ Python 3.11 · FastAPI · SQLite + sqlite-vec (single-file store) · Ollama
 fallback) · Anthropic Claude (`claude-sonnet-5`) for the reasoning path, routed
 through one `backend/inference/router.py` · Model Context Protocol (`mcp`) server ·
 React + Vite + TypeScript + Tailwind.
+
+## Architecture decisions
+
+**Why not LlamaIndex / LangGraph / Mem0?** Rhinalx deliberately does *not* build on a
+RAG or agent-memory framework, because its core properties are ones those frameworks
+abstract away:
+
+- **Character-span provenance, not chunk provenance.** Frameworks retrieve *chunks*
+  ("here's the passage this came from"). Rhinalx's contract is stronger: every claim
+  maps to an exact character offset, enforced structurally as
+  `raw_text[start:end] == span.text` and covered by tests. Threading verbatim offsets
+  back through opaque framework nodes fights the abstraction.
+- **A typed memory model, not generic retrieval.** The domain is Episodes (decisions)
+  → ConsolidatedRationale (semantic layer) → OpenQuestions (detected gaps) →
+  supersede/archive with retrieval weights. That's not "store chunks, fetch chunks"
+  (LlamaIndex) or conversation/agent state (LangGraph memory) — it's a small,
+  purpose-built schema.
+- **One portable, auditable file.** A single inspectable SQLite artifact is a trust
+  property for a scientist; heavier framework storage backends work against it.
+
+The trade-off is real — we forgo LlamaIndex's data connectors and LangGraph's agent
+orchestration. We don't need the former for the core loop, and the **MCP server**
+supplies the latter in a cleaner, Claude-native form. (Note: Rhinalx *does* use
+**Ollama** — the local model runtime — for embeddings and the offline fallback; that
+is distinct from **LlamaIndex**, the RAG framework, which it does not use.)
 
 ## Scope
 

@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 740" width="1200" height="740" role="img" aria-label="Rhinalx architecture">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#8A968F"/>
+    </marker>
+    <style>
+      .box{fill:#FFFFFF;stroke:#E7E3D5;stroke-width:2}
+      .t{font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+      .m{font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace}
+      .title{font-weight:700;fill:#14261E}
+      .sub{fill:#45564E}
+      .edge{stroke:#8A968F;stroke-width:2;fill:none}
+      .lbl{font-family:ui-monospace,'SF Mono',Menlo,Consolas,monospace;fill:#8A968F}
+    </style>
+  </defs>
+
+  <rect x="1" y="1" width="1198" height="738" rx="20" fill="#FBFAF5" stroke="#E7E3D5" stroke-width="2"/>
+
+  <!-- Sources -->
+  <rect x="80" y="40" width="1040" height="60" rx="12" fill="#E3F1EA" stroke="#BFE0CF" stroke-width="2"/>
+  <text x="600" y="66" text-anchor="middle" class="t title" font-size="18">Sources</text>
+  <text x="600" y="88" text-anchor="middle" class="t sub" font-size="14">protocols · notebook entries · meeting notes · decision records · your PDF / DOCX / CSV / notes</text>
+
+  <path class="edge" d="M600 100 L600 148" marker-end="url(#arrow)"/>
+  <text x="612" y="128" class="lbl" font-size="12">ingest (span-preserving)</text>
+
+  <!-- Memory engine -->
+  <rect x="80" y="150" width="1040" height="112" rx="12" class="box"/>
+  <text x="600" y="182" text-anchor="middle" class="t title" font-size="18">Memory engine</text>
+  <text x="600" y="210" text-anchor="middle" class="t sub" font-size="14">episodic capture · gap detection + interview · consolidation (episodic → semantic)</text>
+  <text x="600" y="234" text-anchor="middle" class="t sub" font-size="14">adaptive forgetting (archive, never delete) · precedent · span-returning retrieval</text>
+
+  <path class="edge" d="M600 262 L600 300" marker-end="url(#arrow)"/>
+
+  <!-- router pill -->
+  <rect x="470" y="300" width="260" height="40" rx="20" fill="#14261E"/>
+  <text x="600" y="325" text-anchor="middle" class="m" font-size="14" fill="#FBFAF5">reason() / embed() — one interface</text>
+
+  <!-- to backends -->
+  <path class="edge" d="M520 340 L380 388" marker-end="url(#arrow)"/>
+  <path class="edge" d="M680 340 L820 388" marker-end="url(#arrow)"/>
+  <text x="612" y="366" class="lbl" font-size="12">POLICY toggle</text>
+
+  <!-- Claude backend -->
+  <rect x="180" y="390" width="360" height="86" rx="12" fill="#12805A"/>
+  <text x="360" y="424" text-anchor="middle" class="t" font-size="18" font-weight="700" fill="#FFFFFF">Claude — reasoning</text>
+  <text x="360" y="450" text-anchor="middle" class="m" font-size="13" fill="#CDEBDD">claude-sonnet-5 (gaps · why · precedent)</text>
+
+  <!-- Ollama backend -->
+  <rect x="660" y="390" width="360" height="86" rx="12" fill="#F3F1E8" stroke="#E7E3D5" stroke-width="2"/>
+  <text x="840" y="424" text-anchor="middle" class="t" font-size="18" font-weight="700" fill="#14261E">Ollama — local</text>
+  <text x="840" y="450" text-anchor="middle" class="m" font-size="13" fill="#45564E">llama3.1:8b · nomic-embed-text (always)</text>
+
+  <!-- to store -->
+  <path class="edge" d="M360 476 L560 524" marker-end="url(#arrow)"/>
+  <path class="edge" d="M840 476 L640 524" marker-end="url(#arrow)"/>
+  <text x="600" y="508" text-anchor="middle" class="lbl" font-size="12">spans + citations</text>
+
+  <!-- Store -->
+  <rect x="330" y="526" width="540" height="60" rx="12" fill="#FBFAF5" stroke="#12805A" stroke-width="2" stroke-dasharray="6 5"/>
+  <text x="600" y="552" text-anchor="middle" class="t title" font-size="17">SQLite + sqlite-vec</text>
+  <text x="600" y="574" text-anchor="middle" class="m sub" font-size="13">one portable, auditable file — data/rhinalx.db</text>
+
+  <!-- to outputs -->
+  <path class="edge" d="M480 586 L380 636" marker-end="url(#arrow)"/>
+  <path class="edge" d="M720 586 L820 636" marker-end="url(#arrow)"/>
+
+  <!-- Web UI -->
+  <rect x="180" y="638" width="360" height="76" rx="12" class="box"/>
+  <text x="360" y="670" text-anchor="middle" class="t title" font-size="16">Web UI</text>
+  <text x="360" y="694" text-anchor="middle" class="t sub" font-size="13">FastAPI + React — ask · inbox · timeline</text>
+
+  <!-- MCP -->
+  <rect x="660" y="638" width="360" height="76" rx="12" fill="#FFFFFF" stroke="#EBD9AF" stroke-width="2"/>
+  <text x="840" y="670" text-anchor="middle" class="t title" font-size="16">MCP server</text>
+  <text x="840" y="694" text-anchor="middle" class="t sub" font-size="13">Claude Desktop / Code operate the memory as tools</text>
+</svg>
