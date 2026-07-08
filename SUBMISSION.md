@@ -20,11 +20,12 @@ entries, and meeting notes, and answers the two questions that bite a researcher
 *"Why did we change this?"* and *"Have we ruled this out before?"* — every claim traced
 to an exact source span. Its signature move goes beyond retrieval: on ingest, Claude
 **notices** rationale that's missing everywhere in the record and **interviews the
-scientist** for it, filing the answer as cited memory. When it can't cite a claim, it
-refuses rather than guesses, and superseded reasoning is archived, never deleted.
-Reasoning runs on **Claude**; embeddings and search run locally, so unpublished data
-never has to leave the machine. Built with Claude Code for the 2026 Built with Claude:
-Life Sciences hackathon.
+scientist** for it, filing the answer as cited memory. It also exposes the whole memory
+as an **MCP server**, so Claude Desktop or Claude Code can operate the lab's rationale
+directly as tools. When it can't cite a claim, it refuses rather than guesses, and
+superseded reasoning is archived, never deleted. Reasoning runs on **Claude**;
+embeddings and search run locally, so unpublished data never has to leave the machine.
+Built with Claude Code for the 2026 Built with Claude: Life Sciences hackathon.
 
 ---
 
@@ -45,6 +46,20 @@ Life Sciences hackathon.
    notebook + meeting note (not in protocol v3), every claim cited.
 3. **"Have we excluded an animal for this reason before?"** — surfaces the prior pilot
    exclusion via embeddings, resemblance explained by Claude, both cited.
+
+## Agentic surface (beyond a basic app)
+
+- **Proactive interview on every ingest** — new decisions are audited for missing
+  rationale and turned into Open Questions automatically; the memory notices its own
+  gaps rather than waiting to be queried.
+- **Real-time ingest of your own data** — drop files or paste a note in-app; freeform
+  text is extracted by a Claude-backed pass that must quote each decision verbatim, so
+  provenance stays exact and nothing is fabricated. *Reset study* starts a blank
+  memory on your data alone (the sample dataset on disk is untouched).
+- **MCP server** — `backend/mcp_server/server.py` exposes the memory as tools
+  (`why_was_decided`, `find_precedent`, `list_open_questions`, `answer_open_question`,
+  `ground_claim`, `ingest_note`, …). Claude Desktop / Claude Code becomes the agent
+  operating the lab's rationale, under the same provenance-or-refuse contract.
 
 ## Why it's more than RAG (the memory-science framing)
 
