@@ -56,6 +56,13 @@ Built with Claude Code for the 2026 Built with Claude: Life Sciences hackathon.
   text is extracted by a Claude-backed pass that must quote each decision verbatim, so
   provenance stays exact and nothing is fabricated. *Reset study* starts a blank
   memory on your data alone (the sample dataset on disk is untouched).
+- **Deviation-diff (protocols.io reference frame)** — anchor a run to a canonical
+  protocol (pasted, or fetched live from protocols.io by DOI) and Rhinalx diffs it
+  against what the lab actually did, firing an interview only on *material* departures
+  with *no recorded reason* — even when a note merely *describes* the change. A
+  materiality gate keeps it quiet on trivia (vortex 10 s vs 15 s), while the
+  sufficiency check still fires on a described-but-unexplained change (the "gap that
+  looked filled").
 - **MCP server** — `backend/mcp_server/server.py` exposes the memory as tools
   (`why_was_decided`, `find_precedent`, `list_open_questions`, `answer_open_question`,
   `ground_claim`, `ingest_note`, …). Claude Desktop / Claude Code becomes the agent

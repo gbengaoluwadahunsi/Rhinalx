@@ -23,3 +23,6 @@ Thumbs.db
 # Test / tool caches
 .pytest_cache/
 .ruff_cache/
+
+# Playwright browser binaries (only used to capture README screenshots)
+.playwright-browsers/
