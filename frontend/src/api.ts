@@ -4,6 +4,7 @@ import type {
   DocumentDetail,
   DocumentRow,
   Episode,
+  IngestResult,
   OpenQuestion,
   PrecedentResult,
   ProvenanceResult,
@@ -60,6 +61,31 @@ export async function ask(q: string, k = 8): Promise<AskResult> {
 
 export async function getPrecedent(episodeId?: number): Promise<PrecedentResult> {
   return get<PrecedentResult>(`/precedent${episodeId != null ? `?episode_id=${episodeId}` : ''}`)
+}
+
+export interface IngestInput {
+  filename: string
+  content: string
+  doc_type?: string
+  title?: string
+  date?: string
+  author?: string
+}
+
+export async function ingestText(input: IngestInput): Promise<IngestResult> {
+  const res = await fetch(`${API}/ingest`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+  if (!res.ok) throw new Error(`${res.status}: ${await res.text().catch(() => res.statusText)}`)
+  return res.json() as Promise<IngestResult>
+}
+
+export async function resetStudy(): Promise<{ reset: boolean; documents: number }> {
+  const res = await fetch(`${API}/reset`, { method: 'POST' })
+  if (!res.ok) throw new Error(`${res.status}: ${await res.text().catch(() => res.statusText)}`)
+  return res.json()
 }
 
 export async function setPolicy(policy: 'claude' | 'local'): Promise<{ policy: string; claude_available: boolean }> {

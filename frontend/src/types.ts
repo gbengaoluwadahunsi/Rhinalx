@@ -103,6 +103,23 @@ export interface Study {
   }
 }
 
+export interface IngestGap {
+  open_question_id: number
+  episode: string
+  prompt: string
+  backend: Backend
+}
+
+export interface IngestResult {
+  document_id: number
+  filename: string
+  spans: number
+  episodes: number
+  episode_ids: number[]
+  episodes_detail: Episode[]
+  new_open_questions: IngestGap[]
+}
+
 export interface Config {
   policy: string
   model: string

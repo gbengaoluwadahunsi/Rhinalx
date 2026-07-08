@@ -15,6 +15,7 @@ Offsets are indices into the stored raw_text, so raw_text[start:end] == span tex
 """
 from __future__ import annotations
 
+import json
 import re
 import sqlite3
 from dataclasses import dataclass, field
@@ -221,8 +222,113 @@ def _extract_episodes(raw: str, body_start: int, excluded: list[tuple[int, int]]
     return episodes
 
 
-def parse_document(path: Path) -> ParsedDoc:
-    raw = path.read_text(encoding="utf-8")
+# --- freeform extraction (uploaded notes without the sample's structure) ----
+#
+# The deterministic extractor above keys off the sample corpus's markdown shape
+# ("Changes from ...", "Decision:", bold change statements). A real user's note
+# won't have that. For those we ask the reasoning model to extract decisions, but
+# the model MUST quote each decision verbatim from the source — we then locate the
+# quote in raw_text to compute the span. A quote we cannot find verbatim is dropped,
+# never fabricated. Provenance stays structural: raw_text[start:end] == span.text.
+
+_LLM_KINDS = {"dose_change", "reagent_swap", "exclusion", "protocol_change", "decision"}
+
+_LLM_EXTRACT_SYSTEM = (
+    "You extract discrete research DECISIONS from a scientist's freeform note or "
+    "document. A decision is a concrete choice or change the lab made: a dose change, "
+    "a reagent/antibody swap, an animal or sample exclusion, a protocol or method "
+    "change. For every decision you MUST copy the exact text from the source "
+    "verbatim, character for character, so it can be located and cited. Never "
+    "paraphrase a quote and never invent a decision that is not stated. If the note "
+    "states no concrete decision, return an empty array."
+)
+
+_LLM_EXTRACT_TEMPLATE = """Source note ({filename}):
+\"\"\"
+{body}
+\"\"\"
+
+Extract every concrete research decision stated above. Respond with ONLY a JSON
+array, no prose. Each element:
+{{
+  "kind": one of "dose_change","reagent_swap","exclusion","protocol_change","decision",
+  "summary": "<short human-readable summary of the decision>",
+  "decision_quote": "<exact verbatim sentence/clause from the source stating the change>",
+  "reason_quote": "<exact verbatim text stating WHY, if present, else null>",
+  "date": "<ISO date if stated in the text, else null>",
+  "actor": "<who did it if stated, else null>"
+}}
+Return [] if there is no concrete decision."""
+
+
+def _parse_json_array(text: str) -> list[Any]:
+    start = text.find("[")
+    end = text.rfind("]")
+    if start == -1 or end == -1 or end < start:
+        raise ValueError(f"no JSON array in model output: {text[:200]!r}")
+    return json.loads(text[start:end + 1])
+
+
+def _locate(raw: str, quote: str) -> tuple[int, int] | None:
+    """Verbatim char span of `quote` in `raw`, or None. Exact provenance or nothing."""
+    quote = (quote or "").strip()
+    if not quote:
+        return None
+    idx = raw.find(quote)
+    if idx != -1:
+        return idx, idx + len(quote)
+    # Tolerate collapsed internal whitespace, but only accept a real substring.
+    norm = re.sub(r"\s+", " ", quote)
+    idx = raw.find(norm)
+    if idx != -1:
+        return idx, idx + len(norm)
+    return None
+
+
+def extract_episodes_llm(raw: str, body_start: int, meta: dict[str, Any]) -> list[dict[str, Any]]:
+    body = raw[body_start:]
+    prompt = _LLM_EXTRACT_TEMPLATE.format(
+        filename=meta.get("_filename", "note"), body=body[:8000]
+    )
+    result = router.reason(prompt, system=_LLM_EXTRACT_SYSTEM, max_tokens=1200, temperature=0.0)
+    try:
+        items = _parse_json_array(result.text)
+    except (ValueError, json.JSONDecodeError):
+        return []
+
+    episodes: list[dict[str, Any]] = []
+    for it in items:
+        if not isinstance(it, dict):
+            continue
+        loc = _locate(raw, it.get("decision_quote", ""))
+        if not loc:  # no verbatim anchor -> we refuse to fabricate a span
+            continue
+        s, e = loc
+        kind = it.get("kind") if it.get("kind") in _LLM_KINDS else "decision"
+        ep: dict[str, Any] = {
+            "kind": kind,
+            "summary": _clean(it.get("summary") or raw[s:e]),
+            "what_changed": raw[s:e],
+            "actor": it.get("actor") or (str(meta["author"]) if meta.get("author") else None),
+            "date": it.get("date") or (str(meta["date"]) if meta.get("date") else None),
+            "status": "current",
+            "record_id": meta.get("record_id"),
+            "spans": [{"start": s, "end": e, "text": raw[s:e], "role": "decision"}],
+        }
+        rloc = _locate(raw, it.get("reason_quote", "")) if it.get("reason_quote") else None
+        if rloc and rloc != loc:
+            rs, re_end = rloc
+            ep["spans"].append({"start": rs, "end": re_end, "text": raw[rs:re_end], "role": "reason"})
+        episodes.append(ep)
+    return episodes
+
+
+def parse_text(filename: str, raw: str, *, allow_llm: bool = False) -> ParsedDoc:
+    """Parse a document from raw text. Frontmatter is optional.
+
+    Structured extraction runs first (preserves the sample corpus exactly). When it
+    finds nothing and `allow_llm` is set (uploads), the freeform extractor runs.
+    """
     m = _FRONTMATTER.match(raw)
     if m:
         meta = yaml.safe_load(m.group(1)) or {}
@@ -236,6 +342,8 @@ def parse_document(path: Path) -> ParsedDoc:
     blocks = _block_spans(raw, body_start, excluded)
     doc_type = meta.get("doc_type")
     episodes = _extract_episodes(raw, body_start, excluded, meta, doc_type)
+    if allow_llm and not episodes and raw[body_start:].strip():
+        episodes = extract_episodes_llm(raw, body_start, {**meta, "_filename": filename})
 
     def _int(v: Any) -> int | None:
         try:
@@ -244,7 +352,7 @@ def parse_document(path: Path) -> ParsedDoc:
             return None
 
     return ParsedDoc(
-        filename=path.name,
+        filename=filename,
         frontmatter=meta,
         doc_type=doc_type,
         title=meta.get("title"),
@@ -260,6 +368,11 @@ def parse_document(path: Path) -> ParsedDoc:
         blocks=blocks,
         episodes=episodes,
     )
+
+
+def parse_document(path: Path) -> ParsedDoc:
+    """Parse a source file from disk (structured extraction only — used by the seeder)."""
+    return parse_text(path.name, path.read_text(encoding="utf-8"), allow_llm=False)
 
 
 # --- ingest into the store --------------------------------------------------
@@ -298,6 +411,58 @@ def ingest_path(con: sqlite3.Connection, path: Path) -> dict[str, Any]:
 
     con.commit()
     return {"filename": doc.filename, "spans": len(doc.blocks), "episodes": len(doc.episodes)}
+
+
+def ingest_text(con: sqlite3.Connection, filename: str, raw: str, *,
+                doc_type: str | None = None, title: str | None = None,
+                date: str | None = None, author: str | None = None) -> dict[str, Any]:
+    """Ingest an uploaded document (freeform allowed). Form metadata fills gaps the
+    file's front-matter leaves. Returns the new document + episode ids so the caller
+    can run gap detection on just the new decisions."""
+    doc = parse_text(filename, raw, allow_llm=True)
+
+    doc_id = store.insert_document(
+        con,
+        filename=filename,
+        doc_type=doc.doc_type or doc_type,
+        title=doc.title or title,
+        version=doc.version, status=doc.status, supersedes=doc.supersedes,
+        author=doc.author or author,
+        date=doc.date or date,
+        protocol_version=doc.protocol_version, record_id=doc.record_id,
+        frontmatter=doc.frontmatter, raw_text=raw,
+    )
+
+    # Index source spans; size the vector table to the embedding dim on first use.
+    block_texts = [b[2] for b in doc.blocks]
+    vectors = router.embed(block_texts) if block_texts else []
+    if store.embed_dim(con) is None:
+        dim = len(vectors[0]) if vectors else len(router.embed(["dimension probe"])[0])
+        store.ensure_vec_table(con, dim)
+    for (start, end, text), vec in zip(doc.blocks, vectors):
+        span_id = store.insert_span(con, doc_id, start, end, text, kind="block")
+        store.set_span_embedding(con, span_id, vec)
+
+    episode_ids: list[int] = []
+    for ep in doc.episodes:
+        ep_id = store.insert_episode(
+            con, document_id=doc_id, kind=ep["kind"], summary=ep["summary"],
+            what_changed=ep["what_changed"], actor=ep["actor"], date=ep["date"],
+            status=ep["status"], record_id=ep["record_id"],
+        )
+        for sp in ep["spans"]:
+            store.insert_episode_span(
+                con, episode_id=ep_id, document_id=doc_id,
+                start=sp["start"], end=sp["end"], text=sp["text"], role=sp["role"],
+            )
+        episode_ids.append(ep_id)
+
+    con.commit()
+    return {
+        "document_id": doc_id, "filename": filename,
+        "spans": len(doc.blocks), "episodes": len(doc.episodes),
+        "episode_ids": episode_ids,
+    }
 
 
 def _is_source_document(path: Path) -> bool:

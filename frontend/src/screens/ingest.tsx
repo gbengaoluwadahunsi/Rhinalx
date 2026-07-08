@@ -1,27 +1,136 @@
 ﻿import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { getEpisodes, getStats } from '../api'
-import type { Episode, Stats } from '../types'
+import { Link } from 'react-router-dom'
+import { getEpisodes, getStats, ingestText, resetStudy } from '../api'
+import type { Episode, IngestResult, Stats } from '../types'
 import { Button, Dot, Icon, KindTag } from '../ui'
 
 export function IngestScreen() {
-  const nav = useNavigate()
+  const [busy, setBusy] = useState(false)
+  const [drag, setDrag] = useState(false)
+  const [err, setErr] = useState<string | null>(null)
+  const [results, setResults] = useState<IngestResult[]>([])
+  const [note, setNote] = useState('')
+  const [noteName, setNoteName] = useState('')
+
+  const totals = results.reduce(
+    (a, r) => ({ eps: a.eps + r.episodes, gaps: a.gaps + r.new_open_questions.length }),
+    { eps: 0, gaps: 0 },
+  )
+
+  async function run(filename: string, content: string) {
+    const r = await ingestText({ filename, content })
+    setResults((prev) => [r, ...prev])
+  }
+  async function onFiles(files: FileList | null) {
+    if (!files || !files.length) return
+    setBusy(true); setErr(null)
+    try { for (const f of Array.from(files)) await run(f.name, await f.text()) }
+    catch (e) { setErr(e instanceof Error ? e.message : String(e)) }
+    finally { setBusy(false) }
+  }
+  async function onNote() {
+    if (!note.trim()) return
+    setBusy(true); setErr(null)
+    try { await run((noteName.trim() || 'note') + '.md', note); setNote(''); setNoteName('') }
+    catch (e) { setErr(e instanceof Error ? e.message : String(e)) }
+    finally { setBusy(false) }
+  }
+  async function onReset() {
+    if (!window.confirm('Empty this study? Your ingested sources are cleared. The sample dataset on disk is untouched and can be re-seeded.')) return
+    setBusy(true); setErr(null)
+    try { await resetStudy(); setResults([]) }
+    catch (e) { setErr(e instanceof Error ? e.message : String(e)) }
+    finally { setBusy(false) }
+  }
+
   return (
-    <div className="pp-rise mx-auto max-w-[720px] px-8 pt-6">
+    <div className="pp-rise mx-auto max-w-[760px] px-8 py-7">
       <h1 className="mb-2 font-serif text-[30px] leading-tight tracking-tight">Ingest sources</h1>
-      <p className="mb-6 text-[15px] leading-relaxed text-ink-soft">Protocols, notebook entries, and meeting notes. Rhinalx reads them locally and extracts the decisions inside.</p>
-      <button onClick={() => nav('/app/ingest/processing')}
-        className="flex w-full flex-col items-center gap-3.5 rounded-xl border-2 border-dashed border-[#D9CFA8] bg-attention-soft px-6 py-12 text-center hover:brightness-[.99]">
+      <p className="mb-6 text-[15px] leading-relaxed text-ink-soft">
+        Drop your protocols, notebook entries, and meeting notes - or paste a quick note. Rhinalx reads them
+        locally, extracts the decisions inside, grounds each in a source span, and asks about any decision that
+        arrives without a reason.
+      </p>
+
+      <label
+        onDragOver={(e) => { e.preventDefault(); setDrag(true) }}
+        onDragLeave={() => setDrag(false)}
+        onDrop={(e) => { e.preventDefault(); setDrag(false); void onFiles(e.dataTransfer.files) }}
+        className={`flex w-full cursor-pointer flex-col items-center gap-3.5 rounded-xl border-2 border-dashed px-6 py-11 text-center transition-colors ${drag ? 'border-primary bg-primary-soft' : 'border-[#D9CFA8] bg-attention-soft hover:brightness-[.99]'}`}>
+        <input type="file" multiple accept=".md,.markdown,.txt,.text" className="hidden"
+          onChange={(e) => { void onFiles(e.target.files); e.target.value = '' }} disabled={busy} />
         <div className="flex h-[52px] w-[52px] items-center justify-center rounded-xl border border-[#EBD9AF] bg-white text-attention"><Icon.ingest className="h-6 w-6" /></div>
         <div>
-          <div className="font-serif text-[18px] leading-snug text-ink">Drop protocols, notebooks &amp; notes here</div>
-          <div className="mt-1 text-[14px] text-ink-soft">or click to load the sample study</div>
+          <div className="font-serif text-[18px] leading-snug text-ink">{busy ? 'Reading and extracting...' : 'Drop files here, or click to choose'}</div>
+          <div className="mt-1 text-[14px] text-ink-soft">Markdown or plain-text notes. Front-matter optional.</div>
         </div>
         <div className="flex flex-wrap justify-center gap-1.5">
-          {['.md', '.pdf', '.txt', '.docx'].map((t) => <span key={t} className="rounded border border-line bg-white px-1.5 py-1 font-mono text-[11.5px] text-ink-faint">{t}</span>)}
+          {['.md', '.txt'].map((t) => <span key={t} className="rounded border border-line bg-white px-1.5 py-1 font-mono text-[11.5px] text-ink-faint">{t}</span>)}
         </div>
-      </button>
-      <div className="mt-4 flex items-center justify-center gap-2 text-[13px] font-medium text-ok"><Dot tone="ok" />Nothing is uploaded anywhere - files are read locally, on this machine.</div>
+      </label>
+
+      <div className="mt-3 rounded-xl border border-line bg-surface p-4">
+        <div className="mb-2 flex items-center gap-2">
+          <input value={noteName} onChange={(e) => setNoteName(e.target.value)} placeholder="note name (optional)"
+            className="w-48 rounded-md border border-line bg-paper px-2.5 py-1.5 font-mono text-[12.5px] outline-none focus:border-primary" />
+          <span className="text-[13px] text-ink-faint">or just paste what happened -</span>
+        </div>
+        <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3}
+          placeholder="e.g. 2025-05-02: switched to the ketamine/xylazine mix for the PVO cohort; excluded animal M12 from behaviour."
+          className="w-full resize-y rounded-md border border-line bg-paper px-3 py-2.5 text-[14px] leading-relaxed outline-none focus:border-primary" />
+        <div className="mt-2.5 flex justify-end"><Button size="sm" onClick={onNote} disabled={busy || !note.trim()}>Ingest note</Button></div>
+      </div>
+
+      <div className="mt-3 flex items-center justify-between">
+        <div className="flex items-center gap-2 text-[13px] font-medium text-ok"><Dot tone="ok" />Read locally, on this machine - nothing is uploaded anywhere.</div>
+        <button onClick={onReset} disabled={busy} className="text-[12.5px] font-medium text-ink-faint hover:text-danger">Reset study</button>
+      </div>
+
+      {err && <div className="mt-4 rounded-lg border border-danger/40 bg-danger/5 px-4 py-3 text-[13px] text-danger">{err}</div>}
+
+      {results.length > 0 && (
+        <div className="pp-rise mt-6">
+          <div className="mb-3 flex items-center gap-3 text-[14px]">
+            <span className="font-semibold text-primary">{totals.eps} decision{totals.eps === 1 ? '' : 's'} extracted</span>
+            {totals.gaps > 0 && <Link to="/app/questions" className="font-semibold text-attention hover:underline">{totals.gaps} open question{totals.gaps === 1 ? '' : 's'} raised -&gt;</Link>}
+            <Link to="/app" className="ml-auto"><Button size="sm" variant="outline">Enter workspace</Button></Link>
+          </div>
+          <div className="flex flex-col gap-3">
+            {results.map((r, i) => (
+              <div key={`${r.document_id}-${i}`} className="rounded-lg border border-line bg-surface p-4">
+                <div className="mb-2 flex items-center gap-2">
+                  <Icon.sources className="h-4 w-4 text-ink-faint" />
+                  <span className="font-mono text-[12.5px] text-ink-soft">{r.filename}</span>
+                  <span className="ml-auto text-[12px] text-ink-faint">{r.episodes} decision{r.episodes === 1 ? '' : 's'} - {r.spans} span{r.spans === 1 ? '' : 's'}</span>
+                </div>
+                {r.episodes === 0 && <div className="text-[13px] text-ink-faint">No concrete decision found in this document - it is stored and searchable, but nothing was extracted as a decision.</div>}
+                <div className="flex flex-col gap-2">
+                  {r.episodes_detail.map((e: Episode) => {
+                    const gap = r.new_open_questions.find((g) => g.episode === e.summary)
+                    return (
+                      <div key={e.id} className="rounded-md border border-line bg-paper px-3 py-2.5">
+                        <div className="flex items-start gap-2.5">
+                          <KindTag kind={e.kind} />
+                          <div className="min-w-0 flex-1">
+                            <div className="text-[14px] leading-snug">{e.summary}</div>
+                            {e.spans[0] && <div className="mt-1 truncate font-mono text-[11.5px] text-ink-faint" title={e.spans[0].text}>&ldquo;{e.spans[0].text}&rdquo;</div>}
+                          </div>
+                        </div>
+                        {gap && (
+                          <div className="mt-2 flex items-start gap-2 rounded border border-attention/40 bg-attention-soft px-2.5 py-2">
+                            <span className="mt-0.5 font-serif text-[13px] font-semibold text-attention">?</span>
+                            <div className="text-[12.5px] leading-snug text-[#7A5312]">{gap.prompt}</div>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

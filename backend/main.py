@@ -16,9 +16,13 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+from backend import ingest
 from backend.config import settings
 from backend.inference import router as inference_router
 from backend.memory import consolidate, interview, precedent, retrieve, store
+
+# Episode kinds whose "why" a proactive interview can chase (mirrors interview.py).
+_DECISION_KINDS = {"dose_change", "reagent_swap", "protocol_change", "decision", "exclusion"}
 
 app = FastAPI(title="Rhinalx API", version="0.1.0")
 
@@ -33,16 +37,14 @@ app.add_middleware(
 
 
 def _con() -> sqlite3.Connection:
-    """Open a store connection, or 503 if the DB isn't seeded yet."""
-    if not settings.db_path.exists():
-        raise HTTPException(
-            status_code=503,
-            detail="Store not seeded. Run: uv run python scripts/seed.py",
-        )
+    """Open a store connection, creating an empty schema if needed.
+
+    An empty store is a valid state now: a real user starts blank and uploads their
+    own sources via /ingest. Read endpoints return empty results; search endpoints
+    refuse ("no sources ingested yet") until the vector index exists.
+    """
     con = store.connect(settings.db_path)
-    if store.embed_dim(con) is None:
-        con.close()
-        raise HTTPException(status_code=503, detail="Store present but empty. Re-seed.")
+    store.ensure_schema(con)
     return con
 
 
@@ -210,6 +212,70 @@ def detect_gaps() -> dict[str, Any]:
         con.close()
 
 
+class IngestBody(BaseModel):
+    filename: str = "note.md"
+    content: str
+    doc_type: str | None = None
+    title: str | None = None
+    date: str | None = None
+    author: str | None = None
+
+
+@app.post("/ingest")
+def ingest_route(body: IngestBody) -> dict[str, Any]:
+    """Ingest a user-uploaded document or pasted note in real time.
+
+    Stores it span-preserving, extracts decision episodes (Claude-backed for
+    freeform text, every span grounded verbatim), then proactively interviews:
+    each new decision missing a rationale raises an Open Question on the spot.
+    """
+    if not body.content.strip():
+        raise HTTPException(status_code=400, detail="empty document")
+    con = _con()
+    try:
+        result = ingest.ingest_text(
+            con, body.filename or "note.md", body.content,
+            doc_type=body.doc_type, title=body.title, date=body.date, author=body.author,
+        )
+        raised = []
+        for ep_id in result["episode_ids"]:
+            ep = store.get_episode(con, ep_id)
+            if not ep or ep["kind"] not in _DECISION_KINDS:
+                continue
+            outcome = interview.detect_gap_for_episode(con, ep)
+            if not outcome["has_rationale"] and outcome["question"]:
+                oq_id = store.insert_open_question(
+                    con, episode_id=ep_id, prompt=outcome["question"],
+                    detected_backend=outcome["backend"],
+                )
+                raised.append({
+                    "open_question_id": oq_id, "episode": ep["summary"],
+                    "prompt": outcome["question"], "backend": outcome["backend"],
+                })
+        return {
+            **result,
+            "new_open_questions": raised,
+            "episodes_detail": [store.get_episode(con, i) for i in result["episode_ids"]],
+        }
+    finally:
+        con.close()
+
+
+@app.post("/reset")
+def reset_route() -> dict[str, Any]:
+    """Empty this machine's live memory so you can ingest your own sources.
+
+    This clears the local DB only; the sample dataset files on disk are untouched
+    and can always be re-seeded with scripts/seed.py.
+    """
+    store.reset_db(settings.db_path)
+    con = _con()
+    try:
+        return {"reset": True, **store.counts(con)}
+    finally:
+        con.close()
+
+
 @app.get("/rationales")
 def rationales(status: str | None = Query(None)) -> dict[str, Any]:
     con = _con()
@@ -234,6 +300,8 @@ def precedent_route(episode_id: int | None = Query(None)) -> dict[str, Any]:
     """Beat 3: find a prior decision that resembles the current one, Claude-explained."""
     con = _con()
     try:
+        if store.embed_dim(con) is None:
+            return {"found": False, "message": "no sources ingested yet"}
         return precedent.find_precedent(con, episode_id=episode_id)
     finally:
         con.close()
@@ -247,6 +315,9 @@ def ask(
     """Beat 2: reconstruct a cited 'why' narrative across the record (or refuse)."""
     con = _con()
     try:
+        if store.embed_dim(con) is None:
+            return {"claim": q, "sufficient": False,
+                    "message": "no sources ingested yet", "answer": []}
         return retrieve.reconstruct(con, q, k=k)
     finally:
         con.close()
@@ -266,6 +337,9 @@ def provenance(
     """
     con = _con()
     try:
+        if store.embed_dim(con) is None:
+            return {"claim": claim, "sufficient": False,
+                    "message": "no sources ingested yet", "results": []}
         query_vec = inference_router.embed([claim])[0]
         hits = store.search_spans(con, query_vec, k=k)
 
