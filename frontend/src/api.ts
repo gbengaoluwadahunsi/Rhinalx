@@ -1,0 +1,73 @@
+import type {
+  AskResult,
+  Config,
+  DocumentDetail,
+  DocumentRow,
+  Episode,
+  OpenQuestion,
+  PrecedentResult,
+  ProvenanceResult,
+  Rationale,
+  Stats,
+  Study,
+} from './types'
+
+export const API = 'http://127.0.0.1:8000'
+
+async function get<T>(path: string): Promise<T> {
+  const res = await fetch(`${API}${path}`)
+  if (!res.ok) throw new Error(`${res.status}: ${await res.text().catch(() => res.statusText)}`)
+  return res.json() as Promise<T>
+}
+
+export async function getHealth(): Promise<boolean> {
+  try {
+    return (await fetch(`${API}/health`)).ok
+  } catch {
+    return false
+  }
+}
+
+export const getStats = () => get<Stats>('/stats')
+export const getStudy = () => get<Study>('/study')
+export const getConfig = () => get<Config>('/config')
+export const getDocuments = () => get<{ documents: DocumentRow[] }>('/documents').then((d) => d.documents)
+export const getDocument = (id: number) => get<DocumentDetail>(`/documents/${id}`)
+export const getEpisodes = () => get<{ episodes: Episode[] }>('/episodes').then((d) => d.episodes)
+export const getEpisode = (id: number) => get<Episode>(`/episodes/${id}`)
+export const getRationales = (status?: string) =>
+  get<{ rationales: Rationale[] }>(`/rationales${status ? `?status=${status}` : ''}`).then((d) => d.rationales)
+export const getOpenQuestions = () =>
+  get<{ open_questions: OpenQuestion[] }>('/open-questions').then((d) => d.open_questions)
+
+export async function answerQuestion(id: number, answer: string): Promise<Rationale> {
+  const res = await fetch(`${API}/open-questions/${id}/answer`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ answer }),
+  })
+  if (!res.ok) throw new Error(`${res.status}: ${await res.text().catch(() => res.statusText)}`)
+  return (await res.json()).rationale as Rationale
+}
+
+export async function provenance(claim: string, k = 4): Promise<ProvenanceResult> {
+  return get<ProvenanceResult>(`/provenance?claim=${encodeURIComponent(claim)}&k=${k}`)
+}
+
+export async function ask(q: string, k = 8): Promise<AskResult> {
+  return get<AskResult>(`/ask?q=${encodeURIComponent(q)}&k=${k}`)
+}
+
+export async function getPrecedent(episodeId?: number): Promise<PrecedentResult> {
+  return get<PrecedentResult>(`/precedent${episodeId != null ? `?episode_id=${episodeId}` : ''}`)
+}
+
+export async function setPolicy(policy: 'claude' | 'local'): Promise<{ policy: string; claude_available: boolean }> {
+  const res = await fetch(`${API}/policy`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ policy }),
+  })
+  if (!res.ok) throw new Error(`${res.status}: ${await res.text().catch(() => res.statusText)}`)
+  return res.json()
+}

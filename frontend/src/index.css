@@ -1,23 +1,24 @@
-@import "tailwindcss";
+﻿@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 /* Rhinalx design tokens (from design/). Exposed as Tailwind theme values so
    utilities like bg-paper / text-primary / font-serif work everywhere.
-   See design/rhinalx_ui_design_prompt.md §3. */
+   See design/rhinalx_ui_design_prompt.md 3. */
 @theme {
-  --color-ink: #1A1A17;
-  --color-ink-soft: #4A4740;
-  --color-ink-faint: #8A867C;
-  --color-paper: #FAF8F3;
+  --color-ink: #0E2A20;
+  --color-ink-soft: #61756B;
+  --color-ink-faint: #8A9A90;
+  --color-paper: #FBFDFB;
   --color-surface: #FFFFFF;
-  --color-sunk: #F3F0E8;
-  --color-line: #E7E3D9;
-  --color-primary: #10726B;
-  --color-primary-soft: #E0EFED;
-  --color-attention: #B8791E;
-  --color-attention-soft: #FBF1DD;
-  --color-link: #4C5FD5;
-  --color-citation: #F3ECC9;
-  --color-archive: #9A7B3C;
+  --color-sunk: #F1F6F1;
+  --color-line: #D8E4DA;
+  --color-primary: #12805A;
+  --color-primary-soft: #E3F1E9;
+  --color-attention: #B4862A;
+  --color-attention-soft: #F3E9CE;
+  --color-link: #0C5C40;
+  --color-citation: #F3E9CE;
+  --color-archive: #B4862A;
   --color-danger: #B23A2E;
   --color-ok: #3E9B6E;
 
@@ -25,3 +26,40 @@
   --font-sans: "IBM Plex Sans", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
 }
+:root {
+  color-scheme: light;
+}
+
+:root.dark {
+  color-scheme: dark;
+  --color-ink: #F4F1E8;
+  --color-ink-soft: #D2CCBD;
+  --color-ink-faint: #918A7B;
+  --color-paper: #111A16;
+  --color-surface: #17231D;
+  --color-sunk: #0D1511;
+  --color-line: #2B3A32;
+  --color-primary: #62D0A8;
+  --color-primary-soft: #173D31;
+  --color-attention: #E3B45F;
+  --color-attention-soft: #3A2C16;
+  --color-link: #9AA7FF;
+  --color-citation: #5A4B1D;
+  --color-archive: #D2A85A;
+  --color-danger: #F07064;
+  --color-ok: #70D39B;
+}
+
+/* Global touches from the design system */
+::selection { background: var(--color-citation); }
+html, body, #root { height: 100%; }
+body { font-family: var(--font-sans); color: var(--color-ink); background: var(--color-paper); -webkit-font-smoothing: antialiased; }
+
+.bg-grid-paper { background-image: linear-gradient(#E6EFE7 1px, transparent 1px), linear-gradient(90deg, #E6EFE7 1px, transparent 1px); background-size: 34px 34px; }
+.dark .bg-grid-paper { background-image: linear-gradient(#223329 1px, transparent 1px), linear-gradient(90deg, #223329 1px, transparent 1px); }
+@keyframes pp-slide-in { from { transform: translateX(24px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes pp-pulse { 0%, 100% { background: #F3ECC9; } 50% { background: #EBDF9C; } }
+@keyframes pp-rise { from { transform: translateY(8px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.pp-rise { animation: pp-rise .22s ease-out; }
+
+
