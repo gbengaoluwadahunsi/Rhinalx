@@ -113,9 +113,7 @@ have to leave your machine.
 
 ## Architecture
 
-<p align="center">
-  <img src="docs/architecture.svg" alt="Rhinalx architecture: sources to memory engine to a reason()/embed() router over Claude or Ollama, one SQLite store, served to the web UI and the MCP server" width="920">
-</p>
+![Rhinalx architecture: sources to memory engine to model router, SQLite store, web UI, and MCP server](./docs/architecture.png)
 
 Reasoning calls (gap detection, interview questions, "why" assembly, precedent
 explanation, consolidation) go to **Claude** when policy allows and fall back to a
