@@ -36,6 +36,17 @@ export function HomeScreen() {
       <Kicker>Study overview</Kicker>
       <h1 className="mb-6 font-serif text-[32px] leading-tight tracking-tight" title={study?.title ?? undefined}>{study?.name ?? 'Study'}</h1>
 
+      {c && c.documents === 0 && (
+        <Link to="/app/ingest" className="mb-6 flex w-full items-center gap-4 rounded-xl border border-primary bg-primary-soft px-5 py-5 text-left hover:brightness-[.99]">
+          <div className="flex h-[42px] w-[42px] flex-none items-center justify-center rounded-lg border border-primary/30 bg-white font-serif text-2xl text-primary">+</div>
+          <div className="flex-1">
+            <div className="text-[15px] font-semibold text-primary">Start your study — ingest your first source</div>
+            <div className="mt-0.5 font-serif text-[14px] text-ink-soft">Drop protocols, notebooks, papers, or meeting notes. Rhinalx extracts the decisions and asks about any that arrive without a reason.</div>
+          </div>
+          <span className="whitespace-nowrap text-[13px] font-semibold text-primary">Ingest sources</span>
+        </Link>
+      )}
+
       <div className="mb-5 grid grid-cols-4 gap-3.5">
         <Stat n={c?.documents ?? '-'} label="Sources" />
         <Stat n={c?.decisions ?? '-'} label="Decisions" />

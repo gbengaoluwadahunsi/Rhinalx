@@ -71,9 +71,10 @@ deleted**, and weighted down → **Archive**.
 
 The demo dataset is only a starting point — Rhinalx works on your real records.
 
-- **Ingest sources** (in-app, `/app/ingest`): drop `.md`/`.txt` files or paste a
-  quick note. Rhinalx reads them **locally**, extracts the decisions inside, and
-  raises an Open Question for any decision that arrives without a reason — live.
+- **Ingest sources** (in-app, `/app/ingest`): drop **PDF, DOCX, CSV, TXT, or MD**
+  files (parsed server-side with `pypdf` / `python-docx`, still fully local) or paste
+  a quick note. Rhinalx reads them, extracts the decisions inside, and raises an Open
+  Question for any decision that arrives without a reason — live.
   Freeform notes (no special structure) are extracted by a Claude-backed pass that
   must **quote each decision verbatim**; a quote it can't locate in your text is
   dropped, never fabricated, so provenance stays exact.
@@ -194,18 +195,19 @@ cp .env.example .env      # set ANTHROPIC_API_KEY, POLICY=claude|local
 uv sync
 npm --prefix frontend install
 
-# 4. one command: seed the store, then run both servers
-uv run python scripts/demo.py            # add --reseed to rebuild the store
+# 4. one command: start the backend + UI (boots EMPTY — ingest your own sources)
+uv run python scripts/demo.py            # add --seed to load the sample study (the demo)
 ```
 
-Then open **http://localhost:5173**. The API is on `http://localhost:8000`.
+Then open **http://localhost:5173** and ingest your first source at
+`/app/ingest`. The API is on `http://localhost:8000`.
 
 Run the pieces separately if you prefer:
 
 ```bash
-uv run python scripts/seed.py                 # build data/rhinalx.db
-uv run uvicorn backend.main:app --port 8000   # API
+uv run uvicorn backend.main:app --port 8000   # API (starts empty)
 npm --prefix frontend run dev                 # UI on :5173
+uv run python scripts/seed.py                 # optional: load the sample study
 uv run pytest                                 # provenance round-trip tests
 ```
 

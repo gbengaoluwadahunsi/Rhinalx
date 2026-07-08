@@ -1,4 +1,4 @@
-import type {
+﻿import type {
   AskResult,
   Config,
   DocumentDetail,
@@ -73,11 +73,29 @@ export interface IngestInput {
 }
 
 export async function ingestText(input: IngestInput): Promise<IngestResult> {
-  const res = await fetch(`${API}/ingest`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(input),
-  })
+  let res: Response
+  try {
+    res = await fetch(`${API}/ingest`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(input),
+    })
+  } catch {
+    throw new Error('Could not reach the Rhinalx backend at 127.0.0.1:8000. Make sure the backend server is running, then try again.')
+  }
+  if (!res.ok) throw new Error(`${res.status}: ${await res.text().catch(() => res.statusText)}`)
+  return res.json() as Promise<IngestResult>
+}
+
+export async function ingestFile(file: File): Promise<IngestResult> {
+  const fd = new FormData()
+  fd.append('file', file)
+  let res: Response
+  try {
+    res = await fetch(`${API}/ingest/file`, { method: 'POST', body: fd })
+  } catch {
+    throw new Error('Could not reach the Rhinalx backend at 127.0.0.1:8000. Make sure the backend server is running, then try again.')
+  }
   if (!res.ok) throw new Error(`${res.status}: ${await res.text().catch(() => res.statusText)}`)
   return res.json() as Promise<IngestResult>
 }
@@ -97,3 +115,4 @@ export async function setPolicy(policy: 'claude' | 'local'): Promise<{ policy: s
   if (!res.ok) throw new Error(`${res.status}: ${await res.text().catch(() => res.statusText)}`)
   return res.json()
 }
+

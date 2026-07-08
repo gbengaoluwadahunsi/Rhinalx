@@ -12,11 +12,11 @@ import re
 import sqlite3
 from typing import Any
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, File, HTTPException, Query, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from backend import ingest
+from backend import extract, ingest
 from backend.config import settings
 from backend.inference import router as inference_router
 from backend.memory import consolidate, interview, precedent, retrieve, store
@@ -221,42 +221,74 @@ class IngestBody(BaseModel):
     author: str | None = None
 
 
+def _ingest_and_interview(con: sqlite3.Connection, filename: str, content: str, *,
+                          doc_type: str | None = None, title: str | None = None,
+                          date: str | None = None, author: str | None = None) -> dict[str, Any]:
+    """Ingest text, then proactively interview: each new decision missing a rationale
+    raises an Open Question on the spot. Shared by the JSON and file endpoints."""
+    result = ingest.ingest_text(
+        con, filename, content, doc_type=doc_type, title=title, date=date, author=author,
+    )
+    raised = []
+    for ep_id in result["episode_ids"]:
+        ep = store.get_episode(con, ep_id)
+        if not ep or ep["kind"] not in _DECISION_KINDS:
+            continue
+        outcome = interview.detect_gap_for_episode(con, ep)
+        if not outcome["has_rationale"] and outcome["question"]:
+            oq_id = store.insert_open_question(
+                con, episode_id=ep_id, prompt=outcome["question"],
+                detected_backend=outcome["backend"],
+            )
+            raised.append({
+                "open_question_id": oq_id, "episode": ep["summary"],
+                "prompt": outcome["question"], "backend": outcome["backend"],
+            })
+    return {
+        **result,
+        "new_open_questions": raised,
+        "episodes_detail": [store.get_episode(con, i) for i in result["episode_ids"]],
+    }
+
+
 @app.post("/ingest")
 def ingest_route(body: IngestBody) -> dict[str, Any]:
-    """Ingest a user-uploaded document or pasted note in real time.
-
-    Stores it span-preserving, extracts decision episodes (Claude-backed for
-    freeform text, every span grounded verbatim), then proactively interviews:
-    each new decision missing a rationale raises an Open Question on the spot.
-    """
+    """Ingest a pasted note (JSON) in real time, span-preserving, with live interview."""
     if not body.content.strip():
         raise HTTPException(status_code=400, detail="empty document")
     con = _con()
     try:
-        result = ingest.ingest_text(
+        return _ingest_and_interview(
             con, body.filename or "note.md", body.content,
             doc_type=body.doc_type, title=body.title, date=body.date, author=body.author,
         )
-        raised = []
-        for ep_id in result["episode_ids"]:
-            ep = store.get_episode(con, ep_id)
-            if not ep or ep["kind"] not in _DECISION_KINDS:
-                continue
-            outcome = interview.detect_gap_for_episode(con, ep)
-            if not outcome["has_rationale"] and outcome["question"]:
-                oq_id = store.insert_open_question(
-                    con, episode_id=ep_id, prompt=outcome["question"],
-                    detected_backend=outcome["backend"],
-                )
-                raised.append({
-                    "open_question_id": oq_id, "episode": ep["summary"],
-                    "prompt": outcome["question"], "backend": outcome["backend"],
-                })
-        return {
-            **result,
-            "new_open_questions": raised,
-            "episodes_detail": [store.get_episode(con, i) for i in result["episode_ids"]],
-        }
+    finally:
+        con.close()
+
+
+@app.post("/ingest/file")
+async def ingest_file_route(file: UploadFile = File(...)) -> dict[str, Any]:
+    """Ingest an uploaded document (PDF, DOCX, CSV, TXT, MD, ...).
+
+    Text is extracted server-side by file type, then run through the same
+    span-preserving, provenance-exact pipeline as a pasted note.
+    """
+    data = await file.read()
+    filename = file.filename or "upload"
+    try:
+        content = extract.extract_text(filename, data)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    except Exception as exc:  # malformed/corrupt file
+        raise HTTPException(status_code=422, detail=f"could not read {filename}: {exc}") from exc
+    if not content.strip():
+        raise HTTPException(
+            status_code=422,
+            detail=f"no extractable text in {filename} (a scanned PDF or an image?)",
+        )
+    con = _con()
+    try:
+        return _ingest_and_interview(con, filename, content)
     finally:
         con.close()
 
