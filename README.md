@@ -1,44 +1,102 @@
-# Demo dataset — Rhinalx (bench-scientist rationale memory)
+# Rhinalx — an AI memory system for scientific reasoning
 
-A small, hand-built synthetic research record for a Gal-3 / LPS neuroinflammation
-study (mirrors a real Alzheimer's model). Everything here is synthetic — safe to
-publish, no unpublished or animal-identifying data. It is engineered so the three
-demo beats land cleanly. **Swap in your own de-identified thesis entries later for
-maximum authenticity, but this runs the demo on its own.**
+> Laboratories don't lose data. They lose **decisions**. Rhinalx makes scientific
+> reasoning permanent.
 
-## Files
-| File | Type | Role in demo |
-|------|------|--------------|
-| `protocol_LPS-AD_v1.md` | protocol v1 | baseline |
-| `protocol_LPS-AD_v2.md` | protocol v2 | n increased, NOR habituation (rationale recorded inline) |
-| `protocol_LPS-AD_v3.md` | protocol v3 | **dose change 1 mg/kg → 250 µg/kg, no inline reason** |
-| `notebook_pilot_2024-10-30.md` | notebook | pilot mortality at 1 mg/kg (half the "why") |
-| `meeting_2024-11-12.md` | meeting note | dose-reduction decision + rationale (other half of the "why") |
-| `notebook_cohort3_2025-01-15.md` | notebook | **antibody swap with NO recorded reason** |
-| `exclusion_pilot_2024-10-28.md` | decision | pilot exclusion, visual/sensorimotor cause (precedent source) |
-| `exclusion_cohort3_2025-02-03.md` | decision | cohort-3 exclusion, same pattern (precedent query) |
+A lab notebook records *what* happened — the dose, the antibody, the cohort, the
+date — but almost never *why*: why the dose dropped between cohorts, why an animal
+was excluded, why a reagent was swapped. That reasoning lives in the PI's head, in
+meeting notes, and in Slack, and it evaporates. Rhinalx captures it as structured,
+**source-traceable** memory and answers the two questions that actually bite a
+researcher:
 
-## The three designed demo beats
+1. **"Why did we change this?"** — reconstructs the reasoning behind a decision,
+   every claim cited to its exact source span.
+2. **"Have we ruled this out before?"** — surfaces precedent so the lab doesn't
+   repeat a dead end.
 
-**Beat 1 — proactive interview (headline Claude feature).**
-On ingest, the agent should detect that `notebook_cohort3_2025-01-15.md` records a
-Gal-3 antibody swap (Abcam ab209344 → Novus NBP2-27373) with no rationale anywhere in
-the corpus, and *interview the scientist*: "You switched the Gal-3 ELISA antibody for
-cohort 3 but there's no recorded reason — what happened?" The captured answer is stored
-with provenance and becomes queryable.
+And its signature move: on ingest it **notices rationale that's missing everywhere
+in the record and interviews you for it** — an AI collaborator that fills the holes
+in the lab's memory before they close. Pure RAG never does this.
 
-**Beat 2 — "why did we change this?" (reconstruction with provenance).**
-Query: *"Why did we drop the LPS dose in cohort 3?"* The answer is NOT in protocol v3
-(which only states the new dose). The engine must reconstruct it from two sources:
-`notebook_pilot_2024-10-30.md` (2/8 mortality, ~18% weight loss at 1 mg/kg) and
-`meeting_2024-11-12.md` (decision + literature rationale). Every claim cites its source.
+Built for the 2026 *Built with Claude: Life Sciences* hackathon (Builder track).
 
-**Beat 3 — precedent surfacing.**
-Query: *"Have we excluded an animal for this reason before?"* against
-`exclusion_cohort3_2025-02-03.md`. The engine should surface `exclusion_pilot_2024-10-28.md`
-(EXC-2024-01) — same pattern (fails cued/visible-platform trials → suspected
-visual/sensorimotor impairment) — and explain the resemblance, with the prior reason shown.
+---
 
-## Provenance rule
-Every generated answer must cite the specific file(s) and span(s) it rests on. If a
-claim can't be traced to a source here, the engine should say so rather than guess.
+## The three demo beats
+
+Run against the synthetic Gal-3 / LPS neuroinflammation study in `data/sample/`:
+
+1. **Proactive interview** — Rhinalx detects that cohort 3's notebook records a
+   Gal-3 antibody swap with *no recorded reason*, and asks you for it. Your answer
+   is filed as memory, attributed to your own words. → **Open Questions**
+2. **Cited "why" reconstruction** — *"Why did we drop the LPS dose in cohort 3?"*
+   The answer isn't in protocol v3; Claude reconstructs it across the pilot notebook
+   (mortality at 1 mg/kg) + the supervisor meeting note, every claim carrying a
+   provenance chip. → **Ask**
+3. **Precedent** — *"Have we excluded an animal for this reason before?"* surfaces
+   the earlier pilot exclusion via embeddings, with a Claude-explained resemblance,
+   both cases cited. → **Precedent**
+
+Consolidation distils these into a **Knowledge** library; when a decision is
+superseded (LPS dose 1 mg/kg → 250 µg/kg) the old rationale is **archived, never
+deleted**, and weighted down → **Archive**.
+
+---
+
+## Principles
+
+- **Provenance always.** No claim is asserted without a citation to a source span.
+  If it can't be cited, Rhinalx refuses ("insufficient evidence in the record")
+  rather than guessing.
+- **Local-first.** Ingestion, embeddings, and search run entirely on your machine
+  against a single inspectable file (`data/rhinalx.db`). Claude is an opt-in
+  enhancement — flip the top-bar toggle to **Local** and the whole loop runs
+  offline on Ollama. Every answer shows which backend served it.
+- **Forgetting never deletes.** Superseded reasoning is archived and de-weighted,
+  fully recoverable.
+
+---
+
+## Quickstart
+
+Prerequisites: [uv](https://docs.astral.sh/uv/), Node.js, and
+[Ollama](https://ollama.com/) running locally.
+
+```bash
+# 1. models (embeddings always local; llama3.1 is the offline reasoning fallback)
+ollama pull nomic-embed-text
+ollama pull llama3.1:8b
+
+# 2. config — copy and add your key (optional; without it, runs fully local)
+cp .env.example .env      # set ANTHROPIC_API_KEY, POLICY=claude|local
+
+# 3. deps
+uv sync
+npm --prefix frontend install
+
+# 4. one command: seed the store, then run both servers
+uv run python scripts/demo.py            # add --reseed to rebuild the store
+```
+
+Then open **http://localhost:5173**. The API is on `http://localhost:8000`.
+
+Run the pieces separately if you prefer:
+
+```bash
+uv run python scripts/seed.py                 # build data/rhinalx.db
+uv run uvicorn backend.main:app --port 8000   # API
+npm --prefix frontend run dev                 # UI on :5173
+uv run pytest                                 # provenance round-trip tests
+```
+
+---
+
+## Stack
+
+Python 3.11 · FastAPI · SQLite + sqlite-vec (single-file store) · Ollama
+`nomic-embed-text` (embeddings, always local) + `llama3.1:8b` (offline reasoning
+fallback) · Anthropic Claude (`claude-sonnet-5`) for the reasoning path, routed
+through one `backend/inference/router.py` · React + Vite + TypeScript + Tailwind.
+
+MIT licensed.
