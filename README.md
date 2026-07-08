@@ -1,6 +1,4 @@
-<p align="center">
-  <img src="docs/banner.svg" alt="Rhinalx - an AI memory system for scientific reasoning" width="860">
-</p>
+![Rhinalx - an AI memory system for scientific reasoning](./docs/banner.png)
 
 <h1 align="center">Rhinalx</h1>
 
@@ -73,11 +71,11 @@ deleted**, and weighted down -> **Archive**.
 
 ## Screenshots
 
-<p align="center">
-  <img src="docs/screenshots/01-landing.png" alt="Rhinalx landing page with the notebook memory hero" width="900"><br/><br/>
-  <img src="docs/screenshots/02-study-overview.png" alt="Rhinalx study overview with source, decision, rationale, and open-question cards" width="900"><br/><br/>
-  <img src="docs/screenshots/03-ingest-sources.png" alt="Rhinalx ingest screen for uploading source files or pasting notes" width="900">
-</p>
+![Rhinalx landing page with the notebook memory hero](./docs/screenshots/01-landing.png)
+
+![Rhinalx study overview with source, decision, rationale, and open-question cards](./docs/screenshots/02-study-overview.png)
+
+![Rhinalx ingest screen for uploading source files or pasting notes](./docs/screenshots/03-ingest-sources.png)
 
 ---
 
@@ -265,4 +263,3 @@ finds *precedent*, and asks for *missing rationale* - and it never deletes resea
 history.
 
 MIT licensed.
-
