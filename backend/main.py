@@ -8,6 +8,7 @@ without a citable span.
 """
 from __future__ import annotations
 
+import json
 import re
 import sqlite3
 from typing import Any
@@ -18,8 +19,9 @@ from pydantic import BaseModel
 
 from backend import extract, ingest
 from backend.config import settings
+from backend.connectors import protocols_io
 from backend.inference import router as inference_router
-from backend.memory import consolidate, interview, precedent, retrieve, store
+from backend.memory import consolidate, deviation, interview, precedent, retrieve, store
 
 # Episode kinds whose "why" a proactive interview can chase (mirrors interview.py).
 _DECISION_KINDS = {"dose_change", "reagent_swap", "protocol_change", "decision", "exclusion"}
@@ -155,6 +157,7 @@ def config() -> dict[str, Any]:
         "local_llm_model": settings.local_llm_model,
         "ollama_host": settings.ollama_host,
         "claude_available": bool(settings.anthropic_api_key),
+        "protocolsio_available": bool(settings.protocolsio_token),
         "db_file": settings.db_path.name,
     }
 
@@ -304,6 +307,84 @@ def reset_route() -> dict[str, Any]:
     con = _con()
     try:
         return {"reset": True, **store.counts(con)}
+    finally:
+        con.close()
+
+
+def _canonical_from_input(canonical: dict | None, canonical_text: str | None,
+                          doi: str | None, version: str | None, title: str | None) -> dict[str, Any]:
+    c: dict[str, Any] = dict(canonical) if isinstance(canonical, dict) else {}
+    if canonical_text and not c.get("steps"):
+        txt = canonical_text.strip()
+        try:
+            parsed = json.loads(txt)
+            if isinstance(parsed, dict):
+                c = {**parsed, **c}
+            elif isinstance(parsed, list):
+                c["steps"] = parsed
+        except json.JSONDecodeError:
+            c["steps"] = [{"step": str(i + 1), "text": ln.strip()}
+                          for i, ln in enumerate(txt.splitlines()) if ln.strip()]
+    if doi:
+        c.setdefault("doi", doi)
+    if version:
+        c.setdefault("version", version)
+    if title:
+        c.setdefault("title", title)
+    return c
+
+
+class DeviationBody(BaseModel):
+    canonical: dict | None = None
+    canonical_text: str | None = None
+    doi: str | None = None
+    version: str | None = None
+    title: str | None = None
+
+
+@app.post("/deviation/detect")
+def deviation_detect(body: DeviationBody) -> dict[str, Any]:
+    """Deviation-diff: compare a pasted/uploaded canonical protocol against the
+    ingested execution corpus; file an Open Question for each material, unexplained
+    departure. The protocols.io reference frame, no network required."""
+    canonical = _canonical_from_input(body.canonical, body.canonical_text,
+                                      body.doi, body.version, body.title)
+    if not canonical.get("steps"):
+        raise HTTPException(status_code=400,
+                            detail="provide a canonical protocol (steps as JSON, or paste the method text)")
+    con = _con()
+    try:
+        if store.embed_dim(con) is None:
+            return {"canonical_source": {"doi": canonical.get("doi"), "version": canonical.get("version")},
+                    "deviations": [], "filed": [], "message": "ingest your execution record first"}
+        detection = deviation.detect_deviations(con, canonical)
+        filed = deviation.file_deviations(con, detection)
+        return {**detection, "filed": filed}
+    finally:
+        con.close()
+
+
+class ProtocolRefBody(BaseModel):
+    ref: str
+
+
+@app.post("/deviation/from-protocolsio")
+def deviation_from_protocolsio(body: ProtocolRefBody) -> dict[str, Any]:
+    """Live protocols.io path: fetch a protocol by id/DOI/URL (token-gated), then run
+    the same deviation-diff against the ingested corpus."""
+    try:
+        canonical = protocols_io.fetch_protocol(body.ref)
+    except protocols_io.ProtocolsIoError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+    con = _con()
+    try:
+        if store.embed_dim(con) is None:
+            return {"canonical": canonical,
+                    "canonical_source": {"doi": canonical.get("doi"), "version": canonical.get("version")},
+                    "deviations": [], "filed": [], "message": "ingest your execution record first"}
+        detection = deviation.detect_deviations(con, canonical)
+        filed = deviation.file_deviations(con, detection)
+        return {"canonical": canonical, **detection, "filed": filed}
     finally:
         con.close()
 

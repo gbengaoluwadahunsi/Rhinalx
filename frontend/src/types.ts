@@ -127,7 +127,37 @@ export interface Config {
   local_llm_model: string
   ollama_host: string
   claude_available: boolean
+  protocolsio_available: boolean
   db_file: string
+}
+
+export interface DeviationSpan {
+  document_id: number
+  start: number
+  end: number
+  text: string
+  filename: string
+}
+
+export interface Deviation {
+  type: string
+  field: string
+  canonical: { step?: string; value?: string; text?: string }
+  observed: { value?: string; quote?: string; source?: string; scope?: string | null; span?: DeviationSpan }
+  materiality: 'high' | 'medium' | 'low'
+  rationale_status: 'explained' | 'partial' | 'unexplained'
+  interview_needed: boolean
+  interview_question: string | null
+  grounded: boolean
+}
+
+export interface DeviationResult {
+  backend?: Backend
+  canonical_source: { doi?: string; version?: string; title?: string | null }
+  canonical?: { doi?: string; version?: string; title?: string | null; url?: string; steps?: { step: string; text: string }[] }
+  deviations: Deviation[]
+  filed: { open_question_id: number; episode_id: number; summary: string; materiality: string; rationale_status: string }[]
+  message?: string
 }
 
 export interface ProvenanceHit {

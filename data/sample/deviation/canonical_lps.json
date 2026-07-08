@@ -1,0 +1,28 @@
+{
+  "title": "LPS-induced neuroinflammation model (mouse)",
+  "doi": "10.17504/protocols.io.demo-lps-neuro",
+  "version": "v2",
+  "source": "protocols.io (canonical, read-only)",
+  "steps": [
+    {
+      "step": "2.2",
+      "text": "Use adult male C57BL/6J mice, 10-12 weeks of age.",
+      "params": { "strain": "C57BL/6J", "age": "10-12 weeks", "sex": "male" }
+    },
+    {
+      "step": "3.4",
+      "text": "Administer LPS at 5 mg/kg i.p., once daily for 7 days.",
+      "params": { "agent": "LPS", "dose": "5 mg/kg", "route": "i.p.", "schedule": "once daily x7" }
+    },
+    {
+      "step": "4.1",
+      "text": "Vortex brain homogenate for 10 s before centrifugation.",
+      "params": { "duration": "10 s" }
+    },
+    {
+      "step": "5.3",
+      "text": "Include a saline vehicle control group.",
+      "params": { "control": "saline vehicle" }
+    }
+  ]
+}

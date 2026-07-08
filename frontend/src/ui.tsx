@@ -41,6 +41,7 @@ export const Icon = {
   ingest: (p: IconProps) => (<S {...p}><path d="M12 4v10 M8 10l4 4 4-4 M5 19h14" /></S>),
   settings: (p: IconProps) => (<S {...p}><path d="M4 8h9M18 8h2M4 16h6M15 16h5" /><circle cx="15" cy="8" r="2" /><circle cx="12" cy="16" r="2" /></S>),
   precedent: (p: IconProps) => (<S {...p}><path d="M4 12h6M14 12h6" /><circle cx="12" cy="12" r="2" /></S>),
+  deviation: (p: IconProps) => (<S {...p}><path d="M6 4v6a4 4 0 0 0 4 4h8M14 10l4 4-4 4" /><circle cx="6" cy="4" r="1.6" /></S>),
   close: (p: IconProps) => (<S {...p}><path d="M6 6l12 12M18 6L6 18" /></S>),
   chevron: (p: IconProps) => (<S {...p}><path d="M9 6l6 6-6 6" /></S>),
   arrow: (p: IconProps) => (<S {...p}><path d="M5 12h14M13 6l6 6-6 6" /></S>),

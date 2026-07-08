@@ -3,6 +3,7 @@ import { AppShell, LandingLayout } from './shell'
 import { AnswerScreen, AskScreen } from './screens/ask'
 import { HomeScreen } from './screens/home'
 import { IngestScreen, ProcessingScreen, ReviewScreen } from './screens/ingest'
+import { DeviationsScreen } from './screens/deviations'
 import { ArchiveScreen, KnowledgeScreen } from './screens/knowledge'
 import {
   HowItWorksScreen,
@@ -45,6 +46,7 @@ export default function App() {
         <Route path="timeline" element={<TimelineScreen />} />
         <Route path="timeline/:id" element={<DecisionDetailScreen />} />
         <Route path="precedent" element={<PrecedentScreen />} />
+        <Route path="deviations" element={<DeviationsScreen />} />
         <Route path="knowledge" element={<KnowledgeScreen />} />
         <Route path="archive" element={<ArchiveScreen />} />
         <Route path="sources" element={<SourcesScreen />} />

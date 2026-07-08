@@ -38,6 +38,11 @@ class Settings:
     embed_model: str = os.getenv("EMBED_MODEL", "nomic-embed-text")
     local_llm_model: str = os.getenv("LOCAL_LLM_MODEL", "llama3.1:8b")
 
+    # protocols.io connector (optional, opt-in). Bearer token read from env only;
+    # without it, the deviation engine still runs on a pasted/uploaded canonical.
+    protocolsio_token: str = os.getenv("PROTOCOLS_IO_TOKEN", "")
+    protocolsio_base: str = os.getenv("PROTOCOLS_IO_BASE", "https://api.protocols.io/v3")
+
     # Single-file store.
     db_path: Path = _resolve(os.getenv("DB_PATH", "data/rhinalx.db"))
 

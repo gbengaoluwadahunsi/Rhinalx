@@ -11,6 +11,7 @@ const NAV: NavItem[] = [
   { to: '/app/questions', label: 'Open Questions', icon: Icon.questions, badge: true },
   { to: '/app/timeline', label: 'Timeline', icon: Icon.timeline },
   { to: '/app/precedent', label: 'Precedent', icon: Icon.precedent },
+  { to: '/app/deviations', label: 'Deviations', icon: Icon.deviation },
   { to: '/app/knowledge', label: 'Knowledge', icon: Icon.knowledge },
   { to: '/app/archive', label: 'Archive', icon: Icon.archive },
   { to: '/app/sources', label: 'Sources', icon: Icon.sources },

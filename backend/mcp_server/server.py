@@ -27,6 +27,7 @@ Register in Claude Desktop (claude_desktop_config.json):
 from __future__ import annotations
 
 import contextlib
+import json
 import sqlite3
 from typing import Any, Iterator
 
@@ -35,7 +36,7 @@ from mcp.server.fastmcp import FastMCP
 from backend import ingest as ingest_mod
 from backend.config import settings
 from backend.inference import router as inference_router
-from backend.memory import interview, precedent, retrieve, store
+from backend.memory import deviation, interview, precedent, retrieve, store
 
 mcp = FastMCP(
     "rhinalx",
@@ -209,6 +210,42 @@ def ingest_note(content: str, filename: str = "note.md") -> dict[str, Any]:
             "decisions_extracted": result["episodes"],
             "decisions": [store.get_episode(con, i)["summary"] for i in result["episode_ids"]],
             "new_open_questions": raised,
+        }
+
+
+@mcp.tool()
+def check_deviations(canonical_json: str) -> dict[str, Any]:
+    """Compare a CANONICAL protocol (the field-standard method, e.g. from protocols.io)
+    against the lab's ingested execution record, and surface MATERIAL deviations that
+    have no recorded reason. Pass the canonical as JSON: {"steps": [{"step","text"}],
+    "doi": "...", "version": "..."}. Files an Open Question for each material,
+    unexplained departure and returns the full typed diff (including the ones it
+    stayed silent on and why)."""
+    try:
+        canonical = json.loads(canonical_json)
+    except (json.JSONDecodeError, TypeError):
+        return {"error": "canonical_json must be valid JSON with a 'steps' list"}
+    if not isinstance(canonical, dict) or not canonical.get("steps"):
+        return {"error": "provide {\"steps\": [{\"step\", \"text\"}], \"doi\"?, \"version\"?}"}
+    with _con() as con:
+        if not _indexed(con):
+            return {"deviations": [], "message": "ingest your execution record first"}
+        det = deviation.detect_deviations(con, canonical)
+        filed = deviation.file_deviations(con, det)
+        return {
+            "canonical_source": det["canonical_source"],
+            "deviations": [
+                {
+                    "field": d.get("field"), "type": d.get("type"),
+                    "canonical": (d.get("canonical") or {}).get("value"),
+                    "observed": (d.get("observed") or {}).get("value"),
+                    "materiality": d.get("materiality"),
+                    "rationale_status": d.get("rationale_status"),
+                    "interview_needed": d.get("interview_needed"),
+                }
+                for d in det["deviations"]
+            ],
+            "questions_raised": [f["summary"] for f in filed],
         }
 
 

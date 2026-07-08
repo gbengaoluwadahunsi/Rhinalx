@@ -1,6 +1,7 @@
 ﻿import type {
   AskResult,
   Config,
+  DeviationResult,
   DocumentDetail,
   DocumentRow,
   Episode,
@@ -104,6 +105,26 @@ export async function resetStudy(): Promise<{ reset: boolean; documents: number 
   const res = await fetch(`${API}/reset`, { method: 'POST' })
   if (!res.ok) throw new Error(`${res.status}: ${await res.text().catch(() => res.statusText)}`)
   return res.json()
+}
+
+export async function detectDeviations(input: { canonical_text?: string; doi?: string; version?: string; title?: string }): Promise<DeviationResult> {
+  const res = await fetch(`${API}/deviation/detect`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  })
+  if (!res.ok) throw new Error(`${res.status}: ${await res.text().catch(() => res.statusText)}`)
+  return res.json() as Promise<DeviationResult>
+}
+
+export async function deviationFromProtocolsio(ref: string): Promise<DeviationResult> {
+  const res = await fetch(`${API}/deviation/from-protocolsio`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ref }),
+  })
+  if (!res.ok) throw new Error(`${res.status}: ${await res.text().catch(() => res.statusText)}`)
+  return res.json() as Promise<DeviationResult>
 }
 
 export async function setPolicy(policy: 'claude' | 'local'): Promise<{ policy: string; claude_available: boolean }> {
