@@ -375,6 +375,19 @@ def parse_document(path: Path) -> ParsedDoc:
     return parse_text(path.name, path.read_text(encoding="utf-8"), allow_llm=False)
 
 
+
+def _unique_filename(con: sqlite3.Connection, filename: str) -> str:
+    """Keep uploads immutable while avoiding raw UNIQUE constraint failures."""
+    base = Path(filename or "upload")
+    stem = base.stem or "upload"
+    suffix = base.suffix
+    candidate = f"{stem}{suffix}"
+    i = 2
+    while con.execute("SELECT 1 FROM documents WHERE filename = ?", (candidate,)).fetchone():
+        candidate = f"{stem}-{i}{suffix}"
+        i += 1
+    return candidate
+
 # --- ingest into the store --------------------------------------------------
 
 def ingest_path(con: sqlite3.Connection, path: Path) -> dict[str, Any]:
@@ -419,11 +432,12 @@ def ingest_text(con: sqlite3.Connection, filename: str, raw: str, *,
     """Ingest an uploaded document (freeform allowed). Form metadata fills gaps the
     file's front-matter leaves. Returns the new document + episode ids so the caller
     can run gap detection on just the new decisions."""
-    doc = parse_text(filename, raw, allow_llm=True)
+    stored_filename = _unique_filename(con, filename)
+    doc = parse_text(stored_filename, raw, allow_llm=True)
 
     doc_id = store.insert_document(
         con,
-        filename=filename,
+        filename=stored_filename,
         doc_type=doc.doc_type or doc_type,
         title=doc.title or title,
         version=doc.version, status=doc.status, supersedes=doc.supersedes,
@@ -459,7 +473,7 @@ def ingest_text(con: sqlite3.Connection, filename: str, raw: str, *,
 
     con.commit()
     return {
-        "document_id": doc_id, "filename": filename,
+        "document_id": doc_id, "filename": stored_filename,
         "spans": len(doc.blocks), "episodes": len(doc.episodes),
         "episode_ids": episode_ids,
     }

@@ -90,6 +90,21 @@ export interface Stats {
   rationales: number
 }
 
+
+export interface Project {
+  id: number
+  name: string
+  description: string | null
+  created_at: string
+  documents: number
+  active: boolean
+}
+
+export interface ProjectsResult {
+  projects: Project[]
+  active_project_id: number
+}
+
 export interface Study {
   name: string
   version: number | null

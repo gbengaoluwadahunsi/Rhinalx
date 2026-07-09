@@ -23,8 +23,16 @@ from backend.config import settings
 from backend.inference.base import Vector
 
 SCHEMA = """
+CREATE TABLE IF NOT EXISTS projects (
+    id          INTEGER PRIMARY KEY,
+    name        TEXT NOT NULL,
+    description TEXT,
+    created_at  TEXT DEFAULT (datetime('now'))
+);
+
 CREATE TABLE IF NOT EXISTS documents (
     id               INTEGER PRIMARY KEY,
+    project_id       INTEGER NOT NULL DEFAULT 1 REFERENCES projects(id),
     filename         TEXT UNIQUE NOT NULL,
     doc_type         TEXT,
     title            TEXT,
@@ -114,7 +122,17 @@ def connect(db_path: Path | None = None) -> sqlite3.Connection:
 
 def ensure_schema(con: sqlite3.Connection) -> None:
     con.executescript(SCHEMA)
+    _ensure_project_schema(con)
     con.commit()
+
+
+def _ensure_project_schema(con: sqlite3.Connection) -> None:
+    con.execute("INSERT OR IGNORE INTO projects(id, name, description) VALUES (1, 'Default study', 'Local Rhinalx workspace')")
+    columns = {r["name"] for r in con.execute("PRAGMA table_info(documents)").fetchall()}
+    if "project_id" not in columns:
+        con.execute("ALTER TABLE documents ADD COLUMN project_id INTEGER NOT NULL DEFAULT 1 REFERENCES projects(id)")
+    if not con.execute("SELECT value FROM meta WHERE key = 'active_project_id'").fetchone():
+        con.execute("INSERT INTO meta(key, value) VALUES ('active_project_id', '1')")
 
 
 def ensure_vec_table(con: sqlite3.Connection, dim: int) -> None:
@@ -145,19 +163,65 @@ def reset_db(db_path: Path | None = None) -> None:
             p.unlink()
 
 
+
+# --- local projects ---------------------------------------------------------
+
+def active_project_id(con: sqlite3.Connection) -> int:
+    row = con.execute("SELECT value FROM meta WHERE key = 'active_project_id'").fetchone()
+    return int(row["value"]) if row else 1
+
+
+def list_projects(con: sqlite3.Connection) -> list[dict[str, Any]]:
+    active = active_project_id(con)
+    rows = con.execute(
+        """SELECT p.id, p.name, p.description, p.created_at,
+                  COUNT(d.id) AS documents,
+                  SUM(CASE WHEN p.id = ? THEN 1 ELSE 0 END) AS active
+           FROM projects p
+           LEFT JOIN documents d ON d.project_id = p.id
+           GROUP BY p.id
+           ORDER BY p.created_at, p.id""",
+        (active,),
+    ).fetchall()
+    return [{**dict(r), "active": bool(r["active"])} for r in rows]
+
+
+def create_project(con: sqlite3.Connection, name: str, description: str | None = None) -> int:
+    cleaned = name.strip()
+    if not cleaned:
+        raise ValueError("project name is required")
+    cur = con.execute(
+        "INSERT INTO projects(name, description) VALUES (?, ?)",
+        (cleaned, description.strip() if description else None),
+    )
+    con.execute("INSERT OR REPLACE INTO meta(key, value) VALUES ('active_project_id', ?)", (str(cur.lastrowid),))
+    con.commit()
+    return int(cur.lastrowid)
+
+
+def set_active_project(con: sqlite3.Connection, project_id: int) -> dict[str, Any]:
+    row = con.execute("SELECT * FROM projects WHERE id = ?", (project_id,)).fetchone()
+    if not row:
+        raise KeyError(f"No project {project_id}")
+    con.execute("INSERT OR REPLACE INTO meta(key, value) VALUES ('active_project_id', ?)", (str(project_id),))
+    con.commit()
+    return dict(row)
+
 # --- writes -----------------------------------------------------------------
 
 def insert_document(con: sqlite3.Connection, *, filename: str, doc_type: str | None,
                     title: str | None, version: int | None, status: str | None,
                     supersedes: int | None, author: str | None, date: str | None,
                     protocol_version: int | None, record_id: str | None,
-                    frontmatter: dict[str, Any], raw_text: str) -> int:
+                    frontmatter: dict[str, Any], raw_text: str,
+                    project_id: int | None = None) -> int:
+    pid = project_id or active_project_id(con)
     cur = con.execute(
         """INSERT INTO documents
-           (filename, doc_type, title, version, status, supersedes, author, date,
+           (project_id, filename, doc_type, title, version, status, supersedes, author, date,
             protocol_version, record_id, frontmatter_json, raw_text)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-        (filename, doc_type, title, version, status, supersedes, author, date,
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (pid, filename, doc_type, title, version, status, supersedes, author, date,
          protocol_version, record_id, json.dumps(frontmatter, default=str), raw_text),
     )
     return int(cur.lastrowid)
@@ -220,9 +284,10 @@ def search_spans(con: sqlite3.Connection, query_vec: Vector, k: int = 5) -> list
         FROM knn
         JOIN spans s ON s.id = knn.rowid
         JOIN documents d ON d.id = s.document_id
+        WHERE d.project_id = ?
         ORDER BY knn.distance
         """,
-        (sqlite_vec.serialize_float32(query_vec), k),
+        (sqlite_vec.serialize_float32(query_vec), k, active_project_id(con)),
     ).fetchall()
     return [dict(r) for r in rows]
 
@@ -252,9 +317,10 @@ def episodes_for_document(con: sqlite3.Connection, doc_id: int) -> list[dict[str
 
 def list_documents(con: sqlite3.Connection) -> list[dict[str, Any]]:
     rows = con.execute(
-        """SELECT id, filename, doc_type, title, version, status, supersedes,
+        """SELECT id, project_id, filename, doc_type, title, version, status, supersedes,
                   author, date, protocol_version, record_id
-           FROM documents ORDER BY date, filename"""
+           FROM documents WHERE project_id = ? ORDER BY date, filename""",
+        (active_project_id(con),),
     ).fetchall()
     return [dict(r) for r in rows]
 
@@ -264,7 +330,9 @@ def list_episodes(con: sqlite3.Connection) -> list[dict[str, Any]]:
     eps = [dict(r) for r in con.execute(
         """SELECT e.*, d.filename FROM episodes e
            JOIN documents d ON d.id = e.document_id
-           ORDER BY e.date, e.id"""
+           WHERE d.project_id = ?
+           ORDER BY e.date, e.id""",
+        (active_project_id(con),),
     ).fetchall()]
     for ep in eps:
         ep["spans"] = [dict(r) for r in con.execute(
@@ -295,15 +363,16 @@ def get_episode(con: sqlite3.Connection, episode_id: int) -> dict[str, Any] | No
 
 
 def counts(con: sqlite3.Connection) -> dict[str, int]:
-    def n(table: str) -> int:
-        return int(con.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0])
+    pid = active_project_id(con)
+    def scalar(sql: str) -> int:
+        return int(con.execute(sql, (pid,)).fetchone()[0])
     return {
-        "documents": n("documents"),
-        "episodes": n("episodes"),
-        "spans": n("spans"),
-        "episode_spans": n("episode_spans"),
-        "open_questions": n("open_questions"),
-        "rationales": n("consolidated_rationales"),
+        "documents": scalar("SELECT COUNT(*) FROM documents WHERE project_id = ?"),
+        "episodes": scalar("SELECT COUNT(*) FROM episodes e JOIN documents d ON d.id = e.document_id WHERE d.project_id = ?"),
+        "spans": scalar("SELECT COUNT(*) FROM spans s JOIN documents d ON d.id = s.document_id WHERE d.project_id = ?"),
+        "episode_spans": scalar("SELECT COUNT(*) FROM episode_spans es JOIN documents d ON d.id = es.document_id WHERE d.project_id = ?"),
+        "open_questions": scalar("SELECT COUNT(*) FROM open_questions q JOIN episodes e ON e.id = q.episode_id JOIN documents d ON d.id = e.document_id WHERE d.project_id = ?"),
+        "rationales": scalar("SELECT COUNT(*) FROM consolidated_rationales r JOIN episodes e ON e.id = r.episode_id JOIN documents d ON d.id = e.document_id WHERE d.project_id = ?"),
     }
 
 
@@ -336,10 +405,11 @@ def list_open_questions(con: sqlite3.Connection, status: str | None = "open") ->
            JOIN episodes e ON e.id = q.episode_id
            JOIN documents d ON d.id = e.document_id"""
     )
-    params: tuple[Any, ...] = ()
+    params: tuple[Any, ...] = (active_project_id(con),)
+    sql += " WHERE d.project_id = ?"
     if status:
-        sql += " WHERE q.status = ?"
-        params = (status,)
+        sql += " AND q.status = ?"
+        params = (active_project_id(con), status)
     sql += " ORDER BY q.created_at, q.id"
     out = []
     for r in con.execute(sql, params).fetchall():
@@ -411,12 +481,13 @@ def get_rationale(con: sqlite3.Connection, rid: int) -> dict[str, Any] | None:
 def list_rationales(con: sqlite3.Connection, status: str | None = None) -> list[dict[str, Any]]:
     sql = """SELECT r.*, e.summary AS episode_summary, e.kind AS episode_kind, d.filename
              FROM consolidated_rationales r
-             LEFT JOIN episodes e ON e.id = r.episode_id
-             LEFT JOIN documents d ON d.id = e.document_id"""
-    params: tuple[Any, ...] = ()
+             JOIN episodes e ON e.id = r.episode_id
+             JOIN documents d ON d.id = e.document_id
+             WHERE d.project_id = ?"""
+    params: tuple[Any, ...] = (active_project_id(con),)
     if status:
-        sql += " WHERE r.status = ?"
-        params = (status,)
+        sql += " AND r.status = ?"
+        params = (active_project_id(con), status)
     sql += " ORDER BY r.created_at, r.id"
     out = []
     for r in con.execute(sql, params).fetchall():

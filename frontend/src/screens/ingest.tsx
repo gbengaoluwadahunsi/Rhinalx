@@ -1,100 +1,9 @@
-﻿import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getEpisodes, getStats, ingestFile, ingestText, resetStudy } from '../api'
 import type { Episode, IngestResult, Stats } from '../types'
 import { Button, Dot, Icon, KindTag } from '../ui'
 
-const TEXT_EXTENSIONS = new Set(['txt', 'text', 'md', 'markdown', 'csv', 'tsv', 'json', 'xml', 'html', 'htm', 'yaml', 'yml', 'log', 'rtf'])
-
-function fileExtension(filename: string) {
-  return filename.split('.').pop()?.toLowerCase() ?? ''
-}
-
-function decodeXmlEntities(value: string) {
-  const textarea = document.createElement('textarea')
-  textarea.innerHTML = value
-  return textarea.value
-}
-
-async function inflateRaw(data: Uint8Array): Promise<Uint8Array> {
-  const Decompression = (globalThis as typeof globalThis & { DecompressionStream?: new (format: string) => DecompressionStream }).DecompressionStream
-  if (!Decompression) throw new Error('DOCX extraction is not supported in this browser.')
-  const source = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer
-  const stream = new Blob([source]).stream().pipeThrough(new Decompression('deflate-raw'))
-  return new Uint8Array(await new Response(stream).arrayBuffer())
-}
-
-async function extractDocxText(file: File): Promise<string> {
-  const bytes = new Uint8Array(await file.arrayBuffer())
-  const view = new DataView(bytes.buffer)
-  let offset = 0
-
-  while (offset + 30 < bytes.length) {
-    if (view.getUint32(offset, true) !== 0x04034b50) break
-    const method = view.getUint16(offset + 8, true)
-    const compressedSize = view.getUint32(offset + 18, true)
-    const nameLength = view.getUint16(offset + 26, true)
-    const extraLength = view.getUint16(offset + 28, true)
-    const nameStart = offset + 30
-    const dataStart = nameStart + nameLength + extraLength
-    const name = new TextDecoder().decode(bytes.slice(nameStart, nameStart + nameLength))
-    const dataEnd = dataStart + compressedSize
-
-    if (name === 'word/document.xml') {
-      const compressed = bytes.slice(dataStart, dataEnd)
-      const xmlBytes = method === 0 ? compressed : await inflateRaw(compressed)
-      const xml = new TextDecoder().decode(xmlBytes)
-      return decodeXmlEntities(
-        xml
-          .replace(/<w:tab\/>/g, '\t')
-          .replace(/<\/w:p>/g, '\n')
-          .replace(/<[^>]+>/g, '')
-          .replace(/\n{3,}/g, '\n\n')
-          .trim(),
-      )
-    }
-
-    offset = dataEnd
-  }
-
-  throw new Error('Could not extract readable text from this DOCX file.')
-}
-
-function extractPdfTextFromBytes(bytes: Uint8Array): string {
-  const raw = new TextDecoder('latin1').decode(bytes)
-  const blocks = raw.match(/BT[\s\S]*?ET/g) ?? []
-  const chunks: string[] = []
-
-  for (const block of blocks) {
-    for (const match of block.matchAll(/\((?:\\.|[^\\)])*\)\s*Tj/g)) {
-      chunks.push(match[0].replace(/\)\s*Tj$/, '').slice(1).replace(/\\([\\()])/g, '$1'))
-    }
-    for (const match of block.matchAll(/\[(.*?)\]\s*TJ/gs)) {
-      for (const part of match[1].matchAll(/\((?:\\.|[^\\)])*\)/g)) {
-        chunks.push(part[0].slice(1, -1).replace(/\\([\\()])/g, '$1'))
-      }
-    }
-  }
-
-  return chunks.join(' ').replace(/\s+/g, ' ').trim()
-}
-
-async function extractFileText(file: File): Promise<string> {
-  const ext = fileExtension(file.name)
-  if (ext === 'docx') return extractDocxText(file)
-  if (ext === 'pdf') {
-    const text = extractPdfTextFromBytes(new Uint8Array(await file.arrayBuffer()))
-    if (!text) throw new Error('Could not extract selectable text from this PDF. Scanned PDFs need OCR before ingest.')
-    return text
-  }
-
-  const text = await file.text()
-  const nullCount = [...text.slice(0, 4096)].filter((ch) => ch === '\0').length
-  if (!TEXT_EXTENSIONS.has(ext) && nullCount > 8) {
-    throw new Error(`Could not extract readable text from ${file.name}. Try PDF, DOCX, CSV, TXT, MD, or paste the text.`)
-  }
-  return text
-}
 export function IngestScreen() {
   const [busy, setBusy] = useState(false)
   const [drag, setDrag] = useState(false)
@@ -113,14 +22,8 @@ export function IngestScreen() {
     setResults((prev) => [r, ...prev])
   }
   async function runFile(file: File) {
-    // Prefer robust server-side extraction (pypdf / python-docx) on the local backend;
-    // fall back to in-browser extraction if the server can't accept the file.
-    try {
-      const r = await ingestFile(file)
-      setResults((prev) => [r, ...prev])
-    } catch {
-      await run(file.name, await extractFileText(file))
-    }
+    const r = await ingestFile(file)
+    setResults((prev) => [r, ...prev])
   }
   async function onFiles(files: FileList | null) {
     if (!files || !files.length) return
@@ -145,9 +48,9 @@ export function IngestScreen() {
   }
 
   return (
-    <div className="pp-rise mx-auto max-w-[760px] px-8 py-7">
+    <div className="pp-rise mx-auto max-w-[760px] px-4 py-6 sm:px-6 lg:px-8 lg:py-7">
       <h1 className="mb-2 font-serif text-[30px] leading-tight tracking-tight">Ingest sources</h1>
-      <p className="mb-6 text-[15px] leading-relaxed text-ink-soft">
+      <p className="mb-6 text-[15px] leading-relaxed text-ink-soft sm:text-[16px]">
         Drop any source file - protocols, notebooks, papers, exports, or meeting notes - or paste a quick note. Rhinalx reads them
         locally, extracts the decisions inside, grounds each in a source span, and asks about any decision that
         arrives without a reason.
@@ -163,17 +66,17 @@ export function IngestScreen() {
         <div className="flex h-[52px] w-[52px] items-center justify-center rounded-xl border border-[#EBD9AF] bg-white text-attention"><Icon.ingest className="h-6 w-6" /></div>
         <div>
           <div className="font-serif text-[18px] leading-snug text-ink">{busy ? 'Reading and extracting...' : 'Drop files here, or click to choose'}</div>
-          <div className="mt-1 text-[14px] text-ink-soft">PDF, DOCX, CSV, TXT, MD, and other text-readable files are extracted locally.</div>
+          <div className="mt-1 text-[14px] text-ink-soft">PDF, DOCX, XLSX, PPTX, CSV, TXT, MD, and other text-readable files are extracted locally. Images and scanned PDFs need OCR first.</div>
         </div>
         <div className="flex flex-wrap justify-center gap-1.5">
-          {["PDF", "DOCX", "CSV", "TXT", "MD"].map((t) => <span key={t} className="rounded border border-line bg-white px-1.5 py-1 font-mono text-[11.5px] text-ink-faint">{t}</span>)}
+          {["PDF", "DOCX", "XLSX", "PPTX", "CSV", "TXT", "MD"].map((t) => <span key={t} className="rounded border border-line bg-white px-1.5 py-1 font-mono text-[11.5px] text-ink-faint">{t}</span>)}
         </div>
       </label>
 
-      <div className="mt-3 rounded-xl border border-line bg-surface p-4">
-        <div className="mb-2 flex items-center gap-2">
+      <div className="mt-3 rounded-xl border border-line bg-surface p-3 sm:p-4">
+        <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center">
           <input value={noteName} onChange={(e) => setNoteName(e.target.value)} placeholder="note name (optional)"
-            className="w-48 rounded-md border border-line bg-paper px-2.5 py-1.5 font-mono text-[12.5px] outline-none focus:border-primary" />
+            className="w-full rounded-md sm:w-48 border border-line bg-paper px-2.5 py-1.5 font-mono text-[12.5px] outline-none focus:border-primary" />
           <span className="text-[13px] text-ink-faint">or just paste what happened -</span>
         </div>
         <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3}
@@ -182,7 +85,7 @@ export function IngestScreen() {
         <div className="mt-2.5 flex justify-end"><Button size="sm" onClick={onNote} disabled={busy || !note.trim()}>Ingest note</Button></div>
       </div>
 
-      <div className="mt-3 flex items-center justify-between">
+      <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2 text-[13px] font-medium text-ok"><Dot tone="ok" />Read locally, on this machine - nothing is uploaded anywhere.</div>
         <button onClick={onReset} disabled={busy} className="text-[12.5px] font-medium text-ink-faint hover:text-danger">Reset study</button>
       </div>
@@ -191,15 +94,15 @@ export function IngestScreen() {
 
       {results.length > 0 && (
         <div className="pp-rise mt-6">
-          <div className="mb-3 flex items-center gap-3 text-[14px]">
+          <div className="mb-3 flex flex-col gap-2 text-[14px] sm:flex-row sm:items-center sm:gap-3">
             <span className="font-semibold text-primary">{totals.eps} decision{totals.eps === 1 ? '' : 's'} extracted</span>
             {totals.gaps > 0 && <Link to="/app/questions" className="font-semibold text-attention hover:underline">{totals.gaps} open question{totals.gaps === 1 ? '' : 's'} raised -&gt;</Link>}
-            <Link to="/app" className="ml-auto"><Button size="sm" variant="outline">Enter workspace</Button></Link>
+            <Link to="/app" className="sm:ml-auto"><Button size="sm" variant="outline">Enter workspace</Button></Link>
           </div>
           <div className="flex flex-col gap-3">
             {results.map((r, i) => (
               <div key={`${r.document_id}-${i}`} className="rounded-lg border border-line bg-surface p-4">
-                <div className="mb-2 flex items-center gap-2">
+                <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center">
                   <Icon.sources className="h-4 w-4 text-ink-faint" />
                   <span className="font-mono text-[12.5px] text-ink-soft">{r.filename}</span>
                   <span className="ml-auto text-[12px] text-ink-faint">{r.episodes} decision{r.episodes === 1 ? '' : 's'} - {r.spans} span{r.spans === 1 ? '' : 's'}</span>

@@ -83,13 +83,16 @@ deleted**, and weighted down -> **Archive**.
 
 The demo dataset is only a starting point - Rhinalx works on your real records.
 
-- **Ingest sources** (in-app, `/app/ingest`): drop **PDF, DOCX, CSV, TXT, or MD**
-  files (parsed server-side with `pypdf` / `python-docx`, still fully local) or paste
-  a quick note. Rhinalx reads them, extracts the decisions inside, and raises an Open
+- **Ingest sources** (in-app, `/app/ingest`): drop **PDF, DOCX, XLSX, PPTX, CSV, TXT, MD, JSON, XML/HTML, RTF, or other text-readable**
+  files. Selectable PDFs and modern Office files are parsed server-side, fully local;
+  scanned PDFs and image files need OCR first so Rhinalx can preserve exact source spans.
+  You can also paste a quick note. Rhinalx reads them, extracts the decisions inside, and raises an Open
   Question for any decision that arrives without a reason - live.
   Freeform notes (no special structure) are extracted by a Claude-backed pass that
   must **quote each decision verbatim**; a quote it can't locate in your text is
   dropped, never fabricated, so provenance stays exact.
+- **Projects:** create or switch local study workspaces from **Studies**. This is a
+  local-first project layer, not a hosted account system.
 - **Start fresh:** *Reset study* empties the live memory so it holds only your data.
   The sample files on disk are untouched and can always be re-seeded.
 
@@ -189,13 +192,23 @@ uv run python scripts/demo.py            # add --seed to load the sample study (
 Then open **http://localhost:5173** and ingest your first source at
 `/app/ingest`. The API is on `http://localhost:8000`.
 
+For a tighter local production run, build and preview the UI while running the API:
+
+```bash
+npm --prefix frontend run build
+uv run uvicorn backend.main:app --host 127.0.0.1 --port 8000
+npm --prefix frontend run preview -- --host 127.0.0.1 --port 4173
+```
+
 Run the pieces separately if you prefer:
 
 ```bash
 uv run uvicorn backend.main:app --port 8000   # API (starts empty)
 npm --prefix frontend run dev                 # UI on :5173
 uv run python scripts/seed.py                 # optional: load the sample study
-uv run pytest                                 # provenance round-trip tests
+uv run pytest                                 # backend provenance + extraction tests
+npm --prefix frontend run test:smoke          # frontend wiring smoke tests
+uv run python scripts/agentic_eval.py          # repeated-change / contradiction demo checks
 ```
 
 ---
@@ -214,7 +227,7 @@ rhinalx/
     mcp_server/           the MCP server - memory as Claude tools
   frontend/               React + Vite + TypeScript + Tailwind (workspace + landing)
   data/sample/            the demo dataset (see its README for the provenance map)
-  scripts/                seed.py (build memory) - demo.py (one-command run)
+  scripts/                seed.py - demo.py - agentic_eval.py - frontend_smoke.mjs
   tests/                  provenance round-trip tests
 ```
 

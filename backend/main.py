@@ -25,6 +25,7 @@ from backend.memory import consolidate, deviation, interview, precedent, retriev
 
 # Episode kinds whose "why" a proactive interview can chase (mirrors interview.py).
 _DECISION_KINDS = {"dose_change", "reagent_swap", "protocol_change", "decision", "exclusion"}
+_MAX_UPLOAD_BYTES = 25 * 1024 * 1024
 
 app = FastAPI(title="Rhinalx API", version="0.1.0")
 
@@ -162,6 +163,46 @@ def config() -> dict[str, Any]:
     }
 
 
+class ProjectBody(BaseModel):
+    name: str
+    description: str | None = None
+
+
+@app.get("/projects")
+def projects() -> dict[str, Any]:
+    con = _con()
+    try:
+        return {"projects": store.list_projects(con), "active_project_id": store.active_project_id(con)}
+    finally:
+        con.close()
+
+
+@app.post("/projects")
+def create_project(body: ProjectBody) -> dict[str, Any]:
+    con = _con()
+    try:
+        try:
+            pid = store.create_project(con, body.name, body.description)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        return {"project": store.set_active_project(con, pid), "active_project_id": pid}
+    finally:
+        con.close()
+
+
+@app.post("/projects/{project_id}/activate")
+def activate_project(project_id: int) -> dict[str, Any]:
+    con = _con()
+    try:
+        try:
+            project = store.set_active_project(con, project_id)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        return {"project": project, "active_project_id": project_id}
+    finally:
+        con.close()
+
+
 class PolicyBody(BaseModel):
     policy: str
 
@@ -278,6 +319,8 @@ async def ingest_file_route(file: UploadFile = File(...)) -> dict[str, Any]:
     """
     data = await file.read()
     filename = file.filename or "upload"
+    if len(data) > _MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="file is larger than the 25 MB local ingest limit")
     try:
         content = extract.extract_text(filename, data)
     except ValueError as exc:
@@ -287,7 +330,7 @@ async def ingest_file_route(file: UploadFile = File(...)) -> dict[str, Any]:
     if not content.strip():
         raise HTTPException(
             status_code=422,
-            detail=f"no extractable text in {filename} (a scanned PDF or an image?)",
+            detail=f"no extractable text in {filename}. If this is a scanned PDF or image, run OCR first, then upload the OCR text or searchable PDF.",
         )
     con = _con()
     try:

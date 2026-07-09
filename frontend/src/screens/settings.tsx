@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { getConfig, getStudy } from '../api'
-import type { Config, Study } from '../types'
+import { activateProject, createProject, getConfig, getProjects, getStudy } from '../api'
+import type { Config, Project, Study } from '../types'
 import { Button, Dot } from '../ui'
 
 export function SettingsScreen() {
@@ -53,31 +53,66 @@ function Row({ dot, mono, right, rightTone, pill }: { dot: 'ok' | 'primary' | 'f
 
 export function StudiesScreen() {
   const [study, setStudy] = useState<Study | null>(null)
-  useEffect(() => { getStudy().then(setStudy).catch(() => {}) }, [])
+  const [projects, setProjects] = useState<Project[]>([])
+  const [name, setName] = useState('')
+  const [err, setErr] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+
+  async function refresh() {
+    const [s, p] = await Promise.all([getStudy(), getProjects()])
+    setStudy(s)
+    setProjects(p.projects)
+  }
+
+  useEffect(() => { refresh().catch(() => {}) }, [])
+
+  async function onCreate() {
+    if (!name.trim()) return
+    setBusy(true); setErr(null)
+    try { await createProject({ name }); setName(''); await refresh() }
+    catch (e) { setErr(e instanceof Error ? e.message : String(e)) }
+    finally { setBusy(false) }
+  }
+
+  async function onActivate(id: number) {
+    setBusy(true); setErr(null)
+    try { await activateProject(id); await refresh() }
+    catch (e) { setErr(e instanceof Error ? e.message : String(e)) }
+    finally { setBusy(false) }
+  }
+
   const c = study?.counts
 
   return (
-    <div className="pp-rise mx-auto max-w-[820px] px-8 py-9">
+    <div className="pp-rise mx-auto max-w-[880px] px-4 py-7 sm:px-6 lg:px-8 lg:py-9">
       <h1 className="mb-1.5 font-serif text-[30px] leading-tight tracking-tight">Studies</h1>
-      <p className="mb-6 max-w-[560px] text-[15px] leading-relaxed text-ink-soft">Each study is a portable, self-contained memory. Switch between them, or start a new one.</p>
-      <div className="grid grid-cols-2 gap-4">
-        <Link to="/app" className="rounded-lg border border-primary bg-surface p-5 hover:brightness-[.99]">
-          <div className="mb-3 flex items-center gap-2"><Dot tone="ok" /><span className="text-[12px] font-semibold text-ok">active</span></div>
-          <div className="font-serif text-[19px]">{study?.name ?? 'Study'}</div>
-          <div className="mt-1 truncate font-mono text-[12px] text-ink-faint" title={study?.title ?? undefined}>
-            {study?.title ? `${study.title.slice(0, 44)}${study.title.length > 44 ? '...' : ''}` : `study${study?.version != null ? ` - v${study.version}` : ''}`}
+      <p className="mb-6 max-w-[600px] text-[15px] leading-relaxed text-ink-soft">Each study is a local project space for sources, decisions, open questions, and rationale. Start a new workspace or return to the active one.</p>
+      {err && <div className="mb-4 rounded-lg border border-danger/40 bg-danger/5 px-4 py-3 text-[13px] text-danger">{err}</div>}
+      <div className="grid gap-4 md:grid-cols-2">
+        {projects.map((p) => (
+          <button key={p.id} onClick={() => !p.active && void onActivate(p.id)} disabled={busy || p.active}
+            className={`rounded-lg border bg-surface p-5 text-left transition-colors ${p.active ? 'border-primary' : 'border-line hover:border-primary hover:bg-primary-soft'}`}>
+            <div className="mb-3 flex items-center gap-2"><Dot tone={p.active ? 'ok' : 'faint'} /><span className={`text-[12px] font-semibold ${p.active ? 'text-ok' : 'text-ink-faint'}`}>{p.active ? 'active' : 'local project'}</span></div>
+            <div className="font-serif text-[19px]">{p.name}</div>
+            <div className="mt-1 min-h-5 text-[13px] text-ink-faint">{p.description || 'Local Rhinalx workspace'}</div>
+            <div className="mt-4 flex flex-wrap gap-4 text-[13px] text-ink-soft">
+              <span><b className="font-semibold text-ink">{p.active ? (c?.documents ?? p.documents) : p.documents}</b> sources</span>
+              {p.active && <span><b className="font-semibold text-ink">{c?.decisions ?? '-'}</b> decisions</span>}
+              {p.active && <span><b className="font-semibold text-attention">{c?.open_questions ?? '-'}</b> open</span>}
+            </div>
+          </button>
+        ))}
+        <div className="rounded-lg border border-dashed border-line bg-paper p-5">
+          <div className="font-serif text-[19px] text-ink">New study</div>
+          <div className="mt-1 text-[13px] text-ink-faint">Create a separate local workspace for another project.</div>
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="study name"
+              className="min-w-0 flex-1 rounded-md border border-line bg-surface px-3 py-2 text-[14px] outline-none focus:border-primary" />
+            <Button size="sm" onClick={onCreate} disabled={busy || !name.trim()}>Create</Button>
           </div>
-          <div className="mt-4 flex gap-4 text-[13px] text-ink-soft">
-            <span><b className="font-semibold text-ink">{c?.documents ?? '-'}</b> sources</span>
-            <span><b className="font-semibold text-ink">{c?.decisions ?? '-'}</b> decisions</span>
-            <span><b className="font-semibold text-attention">{c?.open_questions ?? '-'}</b> open</span>
-          </div>
-        </Link>
-        <button className="rounded-lg border border-dashed border-line bg-paper p-5 text-left hover:border-ink-faint">
-          <div className="font-serif text-[19px] text-ink-faint">+ New study</div>
-          <div className="mt-1 text-[13px] text-ink-faint">Point Rhinalx at a folder of protocols, notebooks, and notes.</div>
-        </button>
+        </div>
       </div>
+      <div className="mt-6"><Link to="/app"><Button variant="outline">Open active study</Button></Link></div>
     </div>
   )
 }
