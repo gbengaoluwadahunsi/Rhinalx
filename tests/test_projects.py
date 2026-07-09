@@ -54,3 +54,18 @@ def test_project_name_is_required(tmp_path):
             store.create_project(con, "   ")
     finally:
         con.close()
+
+def test_clear_project_data_does_not_touch_other_projects(tmp_path):
+    con = store.connect(tmp_path / "projects.db")
+    store.ensure_schema(con)
+    try:
+        _insert(con, "default-note.txt")
+        second = store.create_project(con, "Second study")
+        _insert(con, "second-note.txt")
+        result = store.clear_project_data(con, second)
+        assert result == {"documents": 1}
+        assert store.list_documents(con) == []
+        store.set_active_project(con, 1)
+        assert [d["filename"] for d in store.list_documents(con)] == ["default-note.txt"]
+    finally:
+        con.close()

@@ -207,6 +207,37 @@ def set_active_project(con: sqlite3.Connection, project_id: int) -> dict[str, An
     con.commit()
     return dict(row)
 
+
+def get_active_project(con: sqlite3.Connection) -> dict[str, Any]:
+    row = con.execute("SELECT * FROM projects WHERE id = ?", (active_project_id(con),)).fetchone()
+    if not row:
+        raise KeyError("Active project does not exist")
+    return dict(row)
+
+
+def clear_project_data(con: sqlite3.Connection, project_id: int) -> dict[str, int]:
+    """Delete one project's memory while preserving the project itself."""
+    doc_rows = con.execute("SELECT id FROM documents WHERE project_id = ?", (project_id,)).fetchall()
+    document_ids = [int(row["id"]) for row in doc_rows]
+    if not document_ids:
+        return {"documents": 0}
+    placeholders = ",".join("?" for _ in document_ids)
+    span_ids = [int(row["id"]) for row in con.execute(f"SELECT id FROM spans WHERE document_id IN ({placeholders})", document_ids).fetchall()]
+    episode_ids = [int(row["id"]) for row in con.execute(f"SELECT id FROM episodes WHERE document_id IN ({placeholders})", document_ids).fetchall()]
+    if episode_ids:
+        marks = ",".join("?" for _ in episode_ids)
+        con.execute(f"DELETE FROM consolidated_rationales WHERE episode_id IN ({marks})", episode_ids)
+        con.execute(f"DELETE FROM open_questions WHERE episode_id IN ({marks})", episode_ids)
+        con.execute(f"DELETE FROM episode_spans WHERE episode_id IN ({marks})", episode_ids)
+        con.execute(f"DELETE FROM episodes WHERE id IN ({marks})", episode_ids)
+    if span_ids and con.execute("SELECT 1 FROM sqlite_master WHERE name = 'vec_spans'").fetchone():
+        marks = ",".join("?" for _ in span_ids)
+        con.execute(f"DELETE FROM vec_spans WHERE rowid IN ({marks})", span_ids)
+    con.execute(f"DELETE FROM spans WHERE document_id IN ({placeholders})", document_ids)
+    con.execute(f"DELETE FROM documents WHERE id IN ({placeholders})", document_ids)
+    con.commit()
+    return {"documents": len(document_ids)}
+
 # --- writes -----------------------------------------------------------------
 
 def insert_document(con: sqlite3.Connection, *, filename: str, doc_type: str | None,
@@ -298,7 +329,7 @@ def get_document(con: sqlite3.Connection, doc_id: int) -> dict[str, Any] | None:
 
 
 def spans_for_document(con: sqlite3.Connection, doc_id: int) -> list[dict[str, Any]]:
-    """The indexed source spans (with exact offsets) for one document — for the
+    """The indexed source spans (with exact offsets) for one document Ã¢â‚¬â€ for the
     source-span viewer, so grounding spans can be highlighted in place."""
     rows = con.execute(
         "SELECT id, start_char, end_char, text, kind FROM spans WHERE document_id = ? ORDER BY start_char",

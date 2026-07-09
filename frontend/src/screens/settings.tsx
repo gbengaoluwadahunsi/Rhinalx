@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { activateProject, createProject, getConfig, getProjects, getStudy } from '../api'
+import { activateProject, clearProjectData, createProject, getConfig, getProjects, getStudy } from '../api'
 import type { Config, Project, Study } from '../types'
 import { Button, Dot } from '../ui'
 
@@ -57,6 +57,7 @@ export function StudiesScreen() {
   const [name, setName] = useState('')
   const [err, setErr] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const activeProject = projects.find((project) => project.active)
 
   async function refresh() {
     const [s, p] = await Promise.all([getStudy(), getProjects()])
@@ -77,6 +78,16 @@ export function StudiesScreen() {
   async function onActivate(id: number) {
     setBusy(true); setErr(null)
     try { await activateProject(id); await refresh() }
+    catch (e) { setErr(e instanceof Error ? e.message : String(e)) }
+    finally { setBusy(false) }
+  }
+
+  async function onClearProject() {
+    if (!activeProject) return
+    const typed = window.prompt(`Type "${activeProject.name}" to delete all sources and memory in this project. The project itself will remain.`)
+    if (typed !== activeProject.name) return
+    setBusy(true); setErr(null)
+    try { await clearProjectData(activeProject.id); await refresh() }
     catch (e) { setErr(e instanceof Error ? e.message : String(e)) }
     finally { setBusy(false) }
   }
@@ -113,6 +124,16 @@ export function StudiesScreen() {
         </div>
       </div>
       <div className="mt-6"><Link to="/app"><Button variant="outline">Open active study</Button></Link></div>
+      {activeProject && (
+        <div className="mt-8 border-t border-danger/30 pt-6">
+          <div className="text-[14px] font-semibold text-danger">Delete project data</div>
+          <p className="mt-1 max-w-[620px] text-[13px] text-ink-faint">Permanently removes all sources, decisions, rationales, and open questions from <b>{activeProject.name}</b>. Other projects are not affected.</p>
+          <button type="button" onClick={() => void onClearProject()} disabled={busy || activeProject.documents === 0}
+            className="mt-3 rounded-md border border-danger/40 px-3 py-2 text-[12.5px] font-semibold text-danger hover:bg-danger/5 disabled:cursor-not-allowed disabled:opacity-40">
+            Delete data in active project
+          </button>
+        </div>
+      )}
     </div>
   )
 }

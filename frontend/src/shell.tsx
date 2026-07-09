@@ -1,7 +1,7 @@
-﻿import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
-import { getConfig, getHealth, getOpenQuestions, getStudy, setPolicy } from './api'
-import type { Config, Study } from './types'
+import { activateProject, getConfig, getHealth, getOpenQuestions, getProjects, getStudy, setPolicy } from './api'
+import type { Config, Project, Study } from './types'
 import { Dot, Icon, Logo, ProvenanceProvider, ThemeToggle, cx } from './ui'
 
 type NavItem = { to: string; label: string; icon: (p: { className?: string }) => ReactNode; end?: boolean; badge?: boolean }
@@ -25,6 +25,8 @@ export function AppShell() {
   const [online, setOnline] = useState(true)
   const [cfg, setCfg] = useState<Config | null>(null)
   const [study, setStudy] = useState<Study | null>(null)
+  const [projects, setProjects] = useState<Project[]>([])
+  const [switching, setSwitching] = useState(false)
 
   async function refresh() {
     const up = await getHealth()
@@ -33,7 +35,9 @@ export function AppShell() {
     try {
       setOpenCount((await getOpenQuestions()).length)
       setCfg(await getConfig())
-      setStudy(await getStudy())
+      const [nextStudy, projectResult] = await Promise.all([getStudy(), getProjects()])
+      setStudy(nextStudy)
+      setProjects(projectResult.projects)
     } catch {
       /* ignore */
     }
@@ -53,6 +57,18 @@ export function AppShell() {
   }
 
   const localOnly = cfg?.policy === 'local' || !cfg?.claude_available
+  const activeProject = projects.find((project) => project.active)
+
+  async function changeProject(projectId: number) {
+    if (projectId === activeProject?.id) return
+    setSwitching(true)
+    try {
+      await activateProject(projectId)
+      await refresh()
+    } finally {
+      setSwitching(false)
+    }
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-paper bg-grid-paper font-sans text-ink">
@@ -63,14 +79,15 @@ export function AppShell() {
           <span className="text-[15px] font-semibold tracking-tight">Rhinalx</span>
         </Link>
 
-        <Link to="/app/studies"
-          className="mx-3 mb-3.5 mt-1.5 flex items-center justify-between rounded-lg border border-line bg-paper/85 px-3 py-2.5 hover:border-primary">
-          <div className="min-w-0">
-            <div className="truncate text-[13px] font-semibold">{study?.name ?? 'Study'}</div>
-            <div className="font-mono text-[11.5px] text-ink-faint">study{study?.version != null ? ` - v${study.version}` : ''}</div>
-          </div>
-          <span className="text-[11px] text-ink-faint"></span>
-        </Link>
+        <div className="mx-3 mb-3.5 mt-1.5 rounded-lg border border-line bg-paper/85 px-3 py-2.5">
+          <label htmlFor="sidebar-project" className="mb-1 block font-mono text-[10px] uppercase text-ink-faint">Active project</label>
+          <select id="sidebar-project" value={activeProject?.id ?? ''} disabled={switching || projects.length === 0}
+            onChange={(event) => void changeProject(Number(event.target.value))}
+            className="w-full min-w-0 bg-transparent text-[13px] font-semibold outline-none">
+            {projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
+          </select>
+          <Link to="/app/studies" className="mt-1 block font-mono text-[11px] text-primary hover:underline">Manage projects</Link>
+        </div>
 
         <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto px-3">
           {NAV.map((n) => (
@@ -108,7 +125,12 @@ export function AppShell() {
       <div className="relative flex min-w-0 flex-1 flex-col">
         <header className="flex h-14 flex-none items-center gap-4 border-b border-line bg-surface/92 px-5 shadow-[0_18px_45px_-42px_rgba(14,42,32,.55)] backdrop-blur">
           <div className="flex min-w-0 items-center gap-2.5">
-            <span className="truncate text-[14px] font-semibold" title={study?.title ?? undefined}>{study?.name ?? 'Study'}</span>
+            <span className="hidden text-[12px] text-ink-faint sm:inline">Workspace</span>
+            <select aria-label="Active project" value={activeProject?.id ?? ''} disabled={switching || projects.length === 0}
+              onChange={(event) => void changeProject(Number(event.target.value))}
+              className="max-w-[220px] truncate bg-transparent text-[14px] font-semibold outline-none">
+              {projects.map((project) => <option key={project.id} value={project.id}>{project.name}</option>)}
+            </select>
             {study?.version != null && (
               <span className="rounded border border-primary-soft bg-primary-soft px-1.5 py-0.5 font-mono text-[11.5px] text-primary">v{study.version}</span>
             )}
@@ -135,7 +157,7 @@ export function AppShell() {
 
         <ProvenanceProvider>
           <main className="pp-scroll relative flex-1 overflow-y-auto">
-            <Outlet />
+            <Outlet key={activeProject?.id ?? 'no-project'} />
           </main>
         </ProvenanceProvider>
       </div>

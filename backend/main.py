@@ -2,7 +2,7 @@
 
 Phase 0: app shell + /health.
 Phase 1: read-only views over the span-preserving store, and the provenance
-round-trip endpoint — given a claim, return the exact source file + character
+round-trip endpoint Ã¢â‚¬â€ given a claim, return the exact source file + character
 span it rests on. Every result carries its provenance; nothing is asserted
 without a citable span.
 """
@@ -88,8 +88,9 @@ def study() -> dict[str, Any]:
         latest = max(protocols, key=lambda d: d.get("version") or 0) if protocols else None
         rationales = store.list_rationales(con)
         c = store.counts(con)
+        project = store.get_active_project(con)
         return {
-            "name": _derive_study_name(latest),
+            "name": project["name"],
             "version": latest.get("version") if latest else None,
             "title": latest.get("title") if latest else None,
             "counts": {
@@ -203,6 +204,19 @@ def activate_project(project_id: int) -> dict[str, Any]:
         con.close()
 
 
+@app.delete("/projects/{project_id}/data")
+def clear_project_data(project_id: int) -> dict[str, Any]:
+    con = _con()
+    try:
+        if project_id != store.active_project_id(con):
+            raise HTTPException(status_code=409, detail="Activate this project before deleting its data.")
+        project = store.get_active_project(con)
+        deleted = store.clear_project_data(con, project_id)
+        return {"cleared": True, "project_id": project_id, "project_name": project["name"], **deleted}
+    finally:
+        con.close()
+
+
 class PolicyBody(BaseModel):
     policy: str
 
@@ -219,7 +233,7 @@ def set_policy(body: PolicyBody) -> dict[str, Any]:
 
 @app.get("/open-questions")
 def open_questions(status: str = Query("open")) -> dict[str, Any]:
-    """Rationale gaps the agent found — the Open Questions inbox (Beat 1)."""
+    """Rationale gaps the agent found Ã¢â‚¬â€ the Open Questions inbox (Beat 1)."""
     con = _con()
     try:
         return {"open_questions": store.list_open_questions(con, status=status)}
@@ -465,7 +479,7 @@ def precedent_route(episode_id: int | None = Query(None)) -> dict[str, Any]:
 
 @app.get("/ask")
 def ask(
-    q: str = Query(..., min_length=3, description="A 'why did we…' question about a decision"),
+    q: str = Query(..., min_length=3, description="A 'why did weÃ¢â‚¬Â¦' question about a decision"),
     k: int = Query(8, ge=1, le=12),
 ) -> dict[str, Any]:
     """Beat 2: reconstruct a cited 'why' narrative across the record (or refuse)."""

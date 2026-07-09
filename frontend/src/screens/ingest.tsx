@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { getEpisodes, getStats, ingestFile, ingestText, resetStudy } from '../api'
-import type { Episode, IngestResult, Stats } from '../types'
+import { getEpisodes, getProjects, getStats, ingestFile, ingestText } from '../api'
+import type { Episode, IngestResult, Project, Stats } from '../types'
 import { Button, Dot, Icon, KindTag } from '../ui'
 
 export function IngestScreen() {
@@ -11,6 +11,11 @@ export function IngestScreen() {
   const [results, setResults] = useState<IngestResult[]>([])
   const [note, setNote] = useState('')
   const [noteName, setNoteName] = useState('')
+  const [activeProject, setActiveProject] = useState<Project | null>(null)
+
+  useEffect(() => {
+    getProjects().then((result) => setActiveProject(result.projects.find((project) => project.active) ?? null)).catch(() => {})
+  }, [])
 
   const totals = results.reduce(
     (a, r) => ({ eps: a.eps + r.episodes, gaps: a.gaps + r.new_open_questions.length }),
@@ -39,14 +44,6 @@ export function IngestScreen() {
     catch (e) { setErr(e instanceof Error ? e.message : String(e)) }
     finally { setBusy(false) }
   }
-  async function onReset() {
-    if (!window.confirm('Empty this study? Your ingested sources are cleared. The sample dataset on disk is untouched and can be re-seeded.')) return
-    setBusy(true); setErr(null)
-    try { await resetStudy(); setResults([]) }
-    catch (e) { setErr(e instanceof Error ? e.message : String(e)) }
-    finally { setBusy(false) }
-  }
-
   return (
     <div className="pp-rise mx-auto max-w-[760px] px-4 py-6 sm:px-6 lg:px-8 lg:py-7">
       <h1 className="mb-2 font-serif text-[30px] leading-tight tracking-tight">Ingest sources</h1>
@@ -55,6 +52,12 @@ export function IngestScreen() {
         locally, extracts the decisions inside, grounds each in a source span, and asks about any decision that
         arrives without a reason.
       </p>
+
+      <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-line bg-surface px-3 py-2 text-[13px]">
+        <span className="text-ink-faint">Ingest into</span>
+        <span className="font-semibold text-primary">{activeProject?.name ?? 'active project'}</span>
+        <Link to="/app/studies" className="ml-auto text-[12px] font-medium text-primary hover:underline">Change project</Link>
+      </div>
 
       <label
         onDragOver={(e) => { e.preventDefault(); setDrag(true) }}
@@ -87,7 +90,6 @@ export function IngestScreen() {
 
       <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2 text-[13px] font-medium text-ok"><Dot tone="ok" />Read locally, on this machine - nothing is uploaded anywhere.</div>
-        <button onClick={onReset} disabled={busy} className="text-[12.5px] font-medium text-ink-faint hover:text-danger">Reset study</button>
       </div>
 
       {err && <div className="mt-4 rounded-lg border border-danger/40 bg-danger/5 px-4 py-3 text-[13px] text-danger">{err}</div>}
@@ -107,7 +109,14 @@ export function IngestScreen() {
                   <span className="font-mono text-[12.5px] text-ink-soft">{r.filename}</span>
                   <span className="ml-auto text-[12px] text-ink-faint">{r.episodes} decision{r.episodes === 1 ? '' : 's'} - {r.spans} span{r.spans === 1 ? '' : 's'}</span>
                 </div>
-                {r.episodes === 0 && <div className="text-[13px] text-ink-faint">No concrete decision found in this document - it is stored and searchable, but nothing was extracted as a decision.</div>}
+                {r.episodes === 0 && <div className="rounded-md border border-line bg-paper p-3">
+                    <div className="text-[13px] text-ink-faint">No concrete decision found. The document is stored and searchable.</div>
+                    <div className="mt-2 flex flex-wrap gap-3 text-[12.5px] font-medium">
+                      <Link to={`/app/sources/${r.document_id}`} className="text-primary hover:underline">Review extracted text</Link>
+                      <button type="button" onClick={() => setNoteName(`${r.filename} decision`)} className="text-primary hover:underline">Add a decision manually</button>
+                      <Link to="/app/search" className="text-primary hover:underline">Search this workspace</Link>
+                    </div>
+                  </div>}
                 <div className="flex flex-col gap-2">
                   {r.episodes_detail.map((e: Episode) => {
                     const gap = r.new_open_questions.find((g) => g.episode === e.summary)

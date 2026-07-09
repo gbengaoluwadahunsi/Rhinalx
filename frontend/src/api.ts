@@ -116,8 +116,8 @@ export async function ingestFile(file: File): Promise<IngestResult> {
   return requestJson<IngestResult>(`${API}/ingest/file`, { method: 'POST', body: fd })
 }
 
-export async function resetStudy(): Promise<{ reset: boolean; documents: number }> {
-  return requestJson<{ reset: boolean; documents: number }>(`${API}/reset`, { method: 'POST' })
+export async function clearProjectData(projectId: number): Promise<{ cleared: boolean; documents: number }> {
+  return requestJson<{ cleared: boolean; documents: number }>(`${API}/projects/${projectId}/data`, { method: 'DELETE' })
 }
 
 export async function detectDeviations(input: { canonical_text?: string; doi?: string; version?: string; title?: string }): Promise<DeviationResult> {
