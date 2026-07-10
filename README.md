@@ -1,4 +1,6 @@
-![Rhinalx - an AI memory system for scientific reasoning](docs/banner.png)
+<p align="center">
+  <img src="https://raw.githubusercontent.com/gbengaoluwadahunsi/Rhinalx/main/docs/banner.png" alt="Rhinalx - an AI memory system for scientific reasoning" width="860">
+</p>
 
 <h1 align="center">Rhinalx</h1>
 
@@ -71,11 +73,11 @@ deleted**, and weighted down -> **Archive**.
 
 ## Screenshots
 
-![Rhinalx landing page with the notebook memory hero](docs/screenshots/01-landing.png)
-
-![Rhinalx study overview with source, decision, rationale, and open-question cards](docs/screenshots/02-study-overview.png)
-
-![Rhinalx ingest screen for uploading source files or pasting notes](docs/screenshots/03-ingest-sources.png)
+<p align="center">
+  <img src="https://raw.githubusercontent.com/gbengaoluwadahunsi/Rhinalx/main/docs/screenshots/01-landing.png" alt="Rhinalx landing page with the notebook memory hero" width="900"><br><br>
+  <img src="https://raw.githubusercontent.com/gbengaoluwadahunsi/Rhinalx/main/docs/screenshots/02-study-overview.png" alt="Rhinalx study overview with source, decision, rationale, and open-question cards" width="900"><br><br>
+  <img src="https://raw.githubusercontent.com/gbengaoluwadahunsi/Rhinalx/main/docs/screenshots/03-ingest-sources.png" alt="Rhinalx ingest screen for uploading source files or pasting notes" width="900">
+</p>
 
 ---
 
@@ -116,7 +118,9 @@ have to leave your machine.
 
 ## Architecture
 
-![Rhinalx architecture: sources to memory engine to model router, SQLite store, web UI, and MCP server](docs/architecture.png)
+<p align="center">
+  <img src="https://raw.githubusercontent.com/gbengaoluwadahunsi/Rhinalx/main/docs/architecture.png" alt="Rhinalx architecture: sources to memory engine to model router, SQLite store, web UI, and MCP server" width="920">
+</p>
 
 Reasoning calls (gap detection, interview questions, "why" assembly, precedent
 explanation, consolidation) go to **Claude** when policy allows and fall back to a
