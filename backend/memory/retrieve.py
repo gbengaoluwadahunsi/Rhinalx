@@ -25,7 +25,9 @@ _ASSEMBLY_SYSTEM = (
     "outside knowledge and do NOT state anything the passages don't support. If the "
     "passages do not actually explain the reason asked about, say so honestly. Be "
     "concise and precise — a scientist is reading, and a confident wrong answer is "
-    "worse than an honest gap."
+    "worse than an honest gap. Some passages are reasons the scientist recorded "
+    "directly through an interview (labelled 'captured reason'); treat those as valid "
+    "evidence you may cite, exactly like a source passage."
 )
 
 _ASSEMBLY_TEMPLATE = """QUESTION: {claim}
@@ -62,18 +64,60 @@ def _parse_json(text: str) -> dict[str, Any]:
     return json.loads(text[start:end + 1])
 
 
+def _norm(t: str) -> str:
+    return re.sub(r"\s+", " ", t or "").strip()
+
+
+def _relevant_rationales(con: sqlite3.Connection, query_vec: list[float], limit: int = 6) -> list[dict[str, Any]]:
+    """Current captured rationale (interview answers + consolidated reasons), ranked
+    to the query when there are many. A decision explained only through the interview
+    is still answerable, because the scientist's recorded reason IS part of the record."""
+    rats = [r for r in store.list_rationales(con, status="current") if (r.get("statement") or "").strip()]
+    if len(rats) <= limit:
+        return rats
+    import numpy as np
+    vecs = router.embed([r["statement"] for r in rats])
+    q = np.asarray(query_vec, dtype=float)
+    m = np.asarray(vecs, dtype=float)
+    sims = (m @ q) / (np.linalg.norm(m, axis=1) * np.linalg.norm(q) + 1e-9)
+    return [rats[int(i)] for i in np.argsort(-sims)[:limit]]
+
+
+def _rationale_source(r: dict[str, Any]) -> dict[str, Any]:
+    """Render a captured rationale as a citation source (no document offsets)."""
+    prov = r.get("provenance")
+    if isinstance(prov, str):
+        try:
+            prov = json.loads(prov)
+        except (ValueError, json.JSONDecodeError):
+            prov = {}
+    prov = prov or {}
+    who = prov.get("author") or ("the scientist" if r.get("source") == "interview" else "the record")
+    return {
+        "filename": f"captured reason ({who})",
+        "date": prov.get("date") or r.get("created_at"),
+        "start_char": 0, "end_char": 0,
+        "text": _norm(r.get("statement", "")),
+        "context_before": "",
+        "context_after": f"re: {r['episode_summary']}" if r.get("episode_summary") else "",
+    }
+
+
 def reconstruct(con: sqlite3.Connection, claim: str, k: int = 8, context: int = 90) -> dict[str, Any]:
-    """Reconstruct a cited 'why' answer for a question."""
+    """Reconstruct a cited 'why' answer from the record: source-document spans PLUS
+    any reasons the scientist captured through the interview."""
     query_vec = router.embed([claim])[0]
-    hits = store.search_spans(con, query_vec, k=k)
-    if not hits:
+    span_hits = store.search_spans(con, query_vec, k=k)
+    rationales = _relevant_rationales(con, query_vec)
+
+    if not span_hits and not rationales:
         return {"claim": claim, "sufficient": False,
                 "message": "insufficient evidence in the record", "answer": []}
 
     # Raw text per document (for surrounding context on each cited span).
     raw_by_doc: dict[int, str] = {}
 
-    def source_of(h: dict[str, Any]) -> dict[str, Any]:
+    def span_source(h: dict[str, Any]) -> dict[str, Any]:
         doc_id = h["document_id"]
         if doc_id not in raw_by_doc:
             doc = store.get_document(con, doc_id)
@@ -87,7 +131,12 @@ def reconstruct(con: sqlite3.Connection, claim: str, k: int = 8, context: int = 
             "context_after": raw[e:e + context],
         }
 
-    prompt = _ASSEMBLY_TEMPLATE.format(claim=claim, passages=_passages(hits))
+    # Numbered passages: source spans first, then captured reasons.
+    n_spans = len(span_hits)
+    lines = [f"[{i}] (source: {h['filename']}) {_norm(h['text'])}" for i, h in enumerate(span_hits, 1)]
+    lines += [f"[{n_spans + j}] (captured reason, recorded by the scientist) {_norm(r['statement'])}"
+              for j, r in enumerate(rationales, 1)]
+    prompt = _ASSEMBLY_TEMPLATE.format(claim=claim, passages="\n".join(lines))
     result = router.reason(prompt, system=_ASSEMBLY_SYSTEM, max_tokens=900, temperature=0.0)
 
     try:
@@ -95,18 +144,21 @@ def reconstruct(con: sqlite3.Connection, claim: str, k: int = 8, context: int = 
     except (ValueError, json.JSONDecodeError):
         data = {"sufficient": False, "claims": []}
 
-    if not data.get("sufficient") or not data.get("claims"):
-        return {
-            "claim": claim, "sufficient": False,
-            "message": "insufficient evidence in the record",
-            "backend": result.backend, "model": result.model, "answer": [],
-        }
+    def insufficient() -> dict[str, Any]:
+        return {"claim": claim, "sufficient": False,
+                "message": "insufficient evidence in the record",
+                "backend": result.backend, "model": result.model, "answer": []}
 
+    if not data.get("sufficient") or not data.get("claims"):
+        return insufficient()
+
+    total = n_spans + len(rationales)
     answer = []
     cited_files: set[str] = set()
     for c in data["claims"]:
-        cites = [i for i in c.get("cites", []) if isinstance(i, int) and 1 <= i <= len(hits)]
-        sources = [source_of(hits[i - 1]) for i in cites]
+        cites = [i for i in c.get("cites", []) if isinstance(i, int) and 1 <= i <= total]
+        sources = [span_source(span_hits[i - 1]) if i <= n_spans
+                   else _rationale_source(rationales[i - 1 - n_spans]) for i in cites]
         for src in sources:
             cited_files.add(src["filename"])
         text = str(c.get("text", "")).strip()
@@ -114,11 +166,7 @@ def reconstruct(con: sqlite3.Connection, claim: str, k: int = 8, context: int = 
             answer.append({"text": text, "sources": sources})
 
     if not answer:
-        return {
-            "claim": claim, "sufficient": False,
-            "message": "insufficient evidence in the record",
-            "backend": result.backend, "model": result.model, "answer": [],
-        }
+        return insufficient()
 
     return {
         "claim": claim, "sufficient": True,

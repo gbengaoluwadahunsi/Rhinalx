@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { getDocument, getDocuments } from '../api'
+import { toast } from 'sonner'
+import { getDocument, getDocuments, resetStudy } from '../api'
 import type { DocumentDetail, DocumentRow } from '../types'
 import { Icon, cx } from '../ui'
 
@@ -8,29 +9,77 @@ const TYPE_LABEL: Record<string, string> = {
   protocol: 'Protocol', lab_notebook: 'Lab notebook', meeting_note: 'Meeting note', decision_record: 'Decision record',
 }
 
+// A meaningful tag for every source: its doc_type when known, otherwise the file
+// extension (PDF, DOCX, ...) so untyped uploads never render an empty badge.
+function sourceLabel(d: DocumentRow): string {
+  if (d.doc_type) return TYPE_LABEL[d.doc_type] ?? d.doc_type
+  const ext = d.filename.split('.').pop()?.toUpperCase()
+  return ext && ext.length <= 5 ? ext : 'Document'
+}
+
 export function SourcesScreen() {
   const [docs, setDocs] = useState<DocumentRow[]>([])
+  const [busy, setBusy] = useState(false)
+
   useEffect(() => { getDocuments().then(setDocs).catch(() => {}) }, [])
+
+  async function confirmDelete() {
+    setBusy(true)
+    const t = toast.loading('Deleting all sources...')
+    try {
+      await resetStudy()
+      setDocs([])
+      toast.success('All sources deleted', { id: t })
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : String(e), { id: t })
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  function deleteAll() {
+    toast(`Delete all ${docs.length} source${docs.length === 1 ? '' : 's'}?`, {
+      description: 'This clears every uploaded document and everything derived from it. It cannot be undone.',
+      duration: Infinity,
+      action: { label: 'Delete all', onClick: () => void confirmDelete() },
+      cancel: { label: 'Cancel', onClick: () => {} },
+    })
+  }
 
   return (
     <div className="pp-rise mx-auto max-w-[820px] px-8 py-9">
-      <h1 className="mb-1.5 font-serif text-[30px] leading-tight tracking-tight">Sources</h1>
+      <div className="mb-1.5 flex items-start justify-between gap-4">
+        <h1 className="font-serif text-[30px] leading-tight tracking-tight">Sources</h1>
+        {docs.length > 0 && (
+          <button onClick={deleteAll} disabled={busy}
+            className="mt-1 flex-none rounded-md border border-danger/40 px-3 py-1.5 text-[13px] font-semibold text-danger transition-colors hover:bg-danger/5 disabled:opacity-50">
+            {busy ? 'Deleting...' : 'Delete all'}
+          </button>
+        )}
+      </div>
       <p className="mb-7 max-w-[560px] text-[15px] leading-relaxed text-ink-soft">
         Every ingested document, read locally. Open one to see its grounding spans highlighted in place.
       </p>
-      <div className="overflow-hidden rounded-lg border border-line bg-surface">
-        {docs.map((d) => (
-          <Link key={d.id} to={`/app/sources/${d.id}`} className="flex items-center gap-3 border-b border-line px-4 py-3.5 last:border-0 hover:bg-paper">
-            <Icon.doc className="h-[18px] w-[18px] flex-none text-ink-faint" />
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-[14px] font-medium">{d.title ?? d.filename}</div>
-              <div className="font-mono text-[11.5px] text-ink-faint">{d.filename}</div>
-            </div>
-            <span className="rounded-full border border-line bg-paper px-2.5 py-1 text-[11.5px] font-medium text-ink-soft">{TYPE_LABEL[d.doc_type ?? ''] ?? d.doc_type}</span>
-            <span className="w-20 text-right font-mono text-[12px] text-ink-faint">{d.date}</span>
-          </Link>
-        ))}
-      </div>
+
+      {docs.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-line bg-surface px-6 py-12 text-center text-[14px] text-ink-faint">
+          No sources yet. <Link to="/app/ingest" className="font-semibold text-primary hover:underline">Ingest sources</Link> to get started.
+        </div>
+      ) : (
+        <div className="overflow-hidden rounded-lg border border-line bg-surface">
+          {docs.map((d) => (
+            <Link key={d.id} to={`/app/sources/${d.id}`} className="flex items-center gap-3 border-b border-line px-4 py-3.5 last:border-0 hover:bg-paper">
+              <Icon.doc className="h-[18px] w-[18px] flex-none text-ink-faint" />
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-[14px] font-medium">{d.title ?? d.filename}</div>
+                <div className="font-mono text-[11.5px] text-ink-faint">{d.filename}</div>
+              </div>
+              <span className="rounded-full border border-line bg-paper px-2.5 py-1 font-mono text-[11px] uppercase tracking-wide text-ink-soft">{sourceLabel(d)}</span>
+              {d.date && <span className="w-20 text-right font-mono text-[12px] text-ink-faint">{d.date}</span>}
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   )
 }

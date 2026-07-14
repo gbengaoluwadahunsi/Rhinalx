@@ -5,18 +5,18 @@
    utilities like bg-paper / text-primary / font-serif work everywhere.
    See design/rhinalx_ui_design_prompt.md 3. */
 @theme {
-  --color-ink: #0E2A20;
-  --color-ink-soft: #61756B;
-  --color-ink-faint: #8A9A90;
-  --color-paper: #FBFDFB;
+  --color-ink: #2B2620;
+  --color-ink-soft: #6B625A;
+  --color-ink-faint: #9A9088;
+  --color-paper: #F7F4EE;
   --color-surface: #FFFFFF;
-  --color-sunk: #F1F6F1;
-  --color-line: #D8E4DA;
-  --color-primary: #12805A;
-  --color-primary-soft: #E3F1E9;
+  --color-sunk: #EFEAE1;
+  --color-line: #E7DFD3;
+  --color-primary: #D97757;
+  --color-primary-soft: #F6E7DF;
   --color-attention: #B4862A;
   --color-attention-soft: #F3E9CE;
-  --color-link: #0C5C40;
+  --color-link: #BD5D3A;
   --color-citation: #F3E9CE;
   --color-archive: #B4862A;
   --color-danger: #B23A2E;
@@ -35,12 +35,12 @@
   --color-ink: #F4F1E8;
   --color-ink-soft: #D2CCBD;
   --color-ink-faint: #918A7B;
-  --color-paper: #111A16;
-  --color-surface: #17231D;
-  --color-sunk: #0D1511;
-  --color-line: #2B3A32;
-  --color-primary: #62D0A8;
-  --color-primary-soft: #173D31;
+  --color-paper: #1F1D1A;
+  --color-surface: #292521;
+  --color-sunk: #171512;
+  --color-line: #383430;
+  --color-primary: #E39B76;
+  --color-primary-soft: #3A2A22;
   --color-attention: #E3B45F;
   --color-attention-soft: #3A2C16;
   --color-link: #9AA7FF;
@@ -55,8 +55,8 @@
 html, body, #root { height: 100%; }
 body { font-family: var(--font-sans); color: var(--color-ink); background: var(--color-paper); -webkit-font-smoothing: antialiased; }
 
-.bg-grid-paper { background-image: linear-gradient(#E6EFE7 1px, transparent 1px), linear-gradient(90deg, #E6EFE7 1px, transparent 1px); background-size: 34px 34px; }
-.dark .bg-grid-paper { background-image: linear-gradient(#223329 1px, transparent 1px), linear-gradient(90deg, #223329 1px, transparent 1px); }
+.bg-grid-paper { background-image: linear-gradient(#ECE5DB 1px, transparent 1px), linear-gradient(90deg, #ECE5DB 1px, transparent 1px); background-size: 34px 34px; }
+.dark .bg-grid-paper { background-image: linear-gradient(#2C2823 1px, transparent 1px), linear-gradient(90deg, #2C2823 1px, transparent 1px); }
 @keyframes pp-slide-in { from { transform: translateX(24px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 @keyframes pp-pulse { 0%, 100% { background: #F3ECC9; } 50% { background: #EBDF9C; } }
 @keyframes pp-rise { from { transform: translateY(8px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }

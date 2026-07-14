@@ -186,7 +186,7 @@ export function LandingLayout() {
           <Link to="/how-it-works" className="rounded-full px-3 py-2 hover:bg-primary-soft hover:text-primary">How it works</Link>
           <Link to="/science" className="rounded-full px-3 py-2 hover:bg-primary-soft hover:text-primary">The science</Link>
           <Link to="/security" className="rounded-full px-3 py-2 hover:bg-primary-soft hover:text-primary">Security</Link>
-          <Link to="/app" className="rounded-full bg-primary px-4 py-2 text-[11px] font-semibold uppercase tracking-[.12em] text-white hover:bg-[#0C5C40]">Open the app</Link>
+          <Link to="/app" className="rounded-full bg-primary px-4 py-2 text-[11px] font-semibold uppercase tracking-[.12em] text-white hover:bg-[#BD5D3A]">Open the app</Link>
         </nav>
       </header>
       <Outlet />
@@ -199,7 +199,7 @@ export function LandingLayout() {
           <Link to="/how-it-works" className="hover:text-primary">How it works</Link>
           <Link to="/science" className="hover:text-primary">Science</Link>
           <Link to="/security" className="hover:text-primary">Security</Link>
-          <Link to="/app" className="rounded-full bg-primary px-4 py-2 text-white hover:bg-[#0C5C40]">Open app</Link>
+          <Link to="/app" className="rounded-full bg-primary px-4 py-2 text-white hover:bg-[#BD5D3A]">Open app</Link>
         </div>
       </footer>
     </div>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { getEpisodes, getProjects, getStats, ingestFile, ingestText } from '../api'
 import type { Episode, IngestResult, Project, Stats } from '../types'
@@ -12,15 +12,34 @@ export function IngestScreen() {
   const [note, setNote] = useState('')
   const [noteName, setNoteName] = useState('')
   const [activeProject, setActiveProject] = useState<Project | null>(null)
+  const [progress, setProgress] = useState(0)
+  const [status, setStatus] = useState('')
+  const creepRef = useRef<number | null>(null)
 
   useEffect(() => {
     getProjects().then((result) => setActiveProject(result.projects.find((project) => project.active) ?? null)).catch(() => {})
   }, [])
+  useEffect(() => () => { if (creepRef.current != null) clearInterval(creepRef.current) }, [])
 
   const totals = results.reduce(
     (a, r) => ({ eps: a.eps + r.episodes, gaps: a.gaps + r.new_open_questions.length }),
     { eps: 0, gaps: 0 },
   )
+
+  // Each file is a slice [from, to] of the bar. The real duration of a Claude
+  // extraction is unknown, so within a slice we "creep" smoothly toward its end
+  // (never reaching it) and snap forward when the file actually finishes.
+  function stopCreep() { if (creepRef.current != null) { clearInterval(creepRef.current); creepRef.current = null } }
+  function startCreep(from: number, to: number) {
+    stopCreep()
+    let p = from
+    setProgress(from)
+    creepRef.current = window.setInterval(() => {
+      p += Math.max(0.5, (to - p) * 0.06)
+      if (p > to - 0.6) p = to - 0.6
+      setProgress(p)
+    }, 130)
+  }
 
   async function run(filename: string, content: string) {
     const r = await ingestText({ filename, content })
@@ -30,19 +49,39 @@ export function IngestScreen() {
     const r = await ingestFile(file)
     setResults((prev) => [r, ...prev])
   }
+
+  async function processTasks(tasks: { label: string; run: () => Promise<void> }[]): Promise<boolean> {
+    const total = tasks.length
+    setBusy(true); setErr(null); setProgress(0)
+    let ok = true
+    try {
+      for (let i = 0; i < total; i++) {
+        setStatus(total > 1 ? `${tasks[i].label} (${i + 1} of ${total})` : tasks[i].label)
+        startCreep((i / total) * 100, ((i + 1) / total) * 100)
+        await tasks[i].run()
+        stopCreep()
+        setProgress(((i + 1) / total) * 100)
+      }
+      setStatus('Done')
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : String(e))
+      ok = false
+    } finally {
+      stopCreep()
+      window.setTimeout(() => { setBusy(false); setProgress(0); setStatus('') }, 500)
+    }
+    return ok
+  }
+
   async function onFiles(files: FileList | null) {
     if (!files || !files.length) return
-    setBusy(true); setErr(null)
-    try { for (const f of Array.from(files)) await runFile(f) }
-    catch (e) { setErr(e instanceof Error ? e.message : String(e)) }
-    finally { setBusy(false) }
+    await processTasks(Array.from(files).map((f) => ({ label: `Reading ${f.name}`, run: () => runFile(f) })))
   }
   async function onNote() {
     if (!note.trim()) return
-    setBusy(true); setErr(null)
-    try { await run((noteName.trim() || 'note') + '.txt', note); setNote(''); setNoteName('') }
-    catch (e) { setErr(e instanceof Error ? e.message : String(e)) }
-    finally { setBusy(false) }
+    const filename = (noteName.trim() || 'note') + '.txt'
+    const ok = await processTasks([{ label: `Reading ${filename}`, run: () => run(filename, note) }])
+    if (ok) { setNote(''); setNoteName('') }
   }
   return (
     <div className="pp-rise mx-auto max-w-[760px] px-4 py-6 sm:px-6 lg:px-8 lg:py-7">
@@ -67,10 +106,23 @@ export function IngestScreen() {
         <input type="file" multiple className="hidden"
           onChange={(e) => { void onFiles(e.target.files); e.target.value = '' }} disabled={busy} />
         <div className="flex h-[52px] w-[52px] items-center justify-center rounded-xl border border-[#EBD9AF] bg-white text-attention"><Icon.ingest className="h-6 w-6" /></div>
-        <div>
-          <div className="font-serif text-[18px] leading-snug text-ink">{busy ? 'Reading and extracting...' : 'Drop files here, or click to choose'}</div>
-          <div className="mt-1 text-[14px] text-ink-soft">PDF, DOCX, XLSX, PPTX, CSV, TXT, MD, and other text-readable files are extracted locally. Images and scanned PDFs need OCR first.</div>
-        </div>
+        {busy ? (
+          <div className="w-full max-w-[440px]">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="font-serif text-[16px] leading-snug text-ink">{status || 'Reading and extracting...'}</span>
+              <span className="font-mono text-[13px] font-semibold text-primary">{Math.round(progress)}%</span>
+            </div>
+            <div className="h-2 overflow-hidden rounded-full bg-sunk">
+              <div className="h-full rounded-full bg-primary transition-[width] duration-200 ease-out" style={{ width: `${progress}%` }} />
+            </div>
+            <div className="mt-2 text-[12.5px] text-ink-soft">Extracting decisions and checking for missing reasons - this uses Claude, so give it a moment.</div>
+          </div>
+        ) : (
+          <div>
+            <div className="font-serif text-[18px] leading-snug text-ink">Drop files here, or click to choose</div>
+            <div className="mt-1 text-[14px] text-ink-soft">PDF, DOCX, XLSX, PPTX, CSV, TXT, MD, and other text-readable files are extracted locally. Images and scanned PDFs need OCR first.</div>
+          </div>
+        )}
         <div className="flex flex-wrap justify-center gap-1.5">
           {["PDF", "DOCX", "XLSX", "PPTX", "CSV", "TXT", "MD"].map((t) => <span key={t} className="rounded border border-line bg-white px-1.5 py-1 font-mono text-[11.5px] text-ink-faint">{t}</span>)}
         </div>

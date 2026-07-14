@@ -70,8 +70,8 @@ export function Logo({ size = 28, className }: { size?: number; className?: stri
       role="img"
       aria-label="Rhinalx"
     >
-      <rect x="1" y="1" width="30" height="30" rx="8" fill="#12805A" />
-      <rect x="1.5" y="1.5" width="29" height="29" rx="7.5" stroke="#0B5C42" strokeWidth="1" />
+      <rect x="1" y="1" width="30" height="30" rx="8" fill="#D97757" />
+      <rect x="1.5" y="1.5" width="29" height="29" rx="7.5" stroke="#A5451F" strokeWidth="1" />
       <g transform="translate(-1.4 -1.1)" strokeLinecap="round" strokeLinejoin="round">
         {/* the older R, ghosted in archival gold, still readable underneath */}
         <path

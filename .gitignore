@@ -26,3 +26,9 @@ Thumbs.db
 
 # Playwright browser binaries (only used to capture README screenshots)
 .playwright-browsers/
+
+# Local scratch test documents (upload-your-own testing; not part of the product)
+test_documents/
+
+# Claude Code local tooling config (not part of the product)
+.claude/

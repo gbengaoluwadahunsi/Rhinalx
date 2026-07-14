@@ -1,4 +1,5 @@
 import { Route, Routes } from 'react-router-dom'
+import { Toaster } from 'sonner'
 import { AppShell, LandingLayout } from './shell'
 import { AnswerScreen, AskScreen } from './screens/ask'
 import { HomeScreen } from './screens/home'
@@ -22,6 +23,8 @@ import { DecisionDetailScreen, TimelineScreen } from './screens/timeline'
 
 export default function App() {
   return (
+    <>
+    <Toaster position="top-center" richColors closeButton toastOptions={{ className: 'font-sans' }} />
     <Routes>
       {/* Public / marketing */}
       <Route element={<LandingLayout />}>
@@ -60,5 +63,6 @@ export default function App() {
         <Route path="ingest/review" element={<ReviewScreen />} />
       </Route>
     </Routes>
+    </>
   )
 }
